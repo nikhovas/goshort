@@ -63,7 +63,7 @@ func urlsPostHandler(w http.ResponseWriter, r *http.Request) {
 	UrlToHttpResponse(url_, w)
 }
 
-func urlsGetHandler(w http.ResponseWriter, r *http.Request, url Url) {
+func urlsGetHandler(w http.ResponseWriter, _ *http.Request, url Url) {
 	UrlToHttpResponse(url, w)
 }
 
@@ -84,7 +84,7 @@ func urlsPatchRequest(w http.ResponseWriter, r *http.Request, url Url) {
 	UrlToHttpResponse(url, w)
 }
 
-func urlsDeleteRequest(w http.ResponseWriter, r *http.Request, key string) {
+func urlsDeleteRequest(w http.ResponseWriter, _ *http.Request, key string) {
 	err := AppObject.Pool.Do(radix.Cmd(nil, "DEL", key))
 	if err != nil {
 		ErrorToResponse(err, w)

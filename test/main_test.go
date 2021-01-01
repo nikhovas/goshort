@@ -25,7 +25,7 @@ type MySuite struct{}
 
 var _ = Suite(&MySuite{})
 
-func (s *MySuite) SetUpSuite(c *C) {
+func (s *MySuite) SetUpSuite(_ *C) {
 	utils.SetupViper()
 	src.AppObject = src.App{}
 	src.AppObject.Initialize(viper.GetString("redis.network"),

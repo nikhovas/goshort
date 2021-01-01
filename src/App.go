@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func faviconHandler(w http.ResponseWriter, r *http.Request) {
+func faviconHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
@@ -28,7 +28,7 @@ func (a *App) Initialize(network, ip string, poolSize int) {
 	a.Router = mux.NewRouter().StrictSlash(true)
 	a.Router.HandleFunc("/favicon.ico", faviconHandler)
 	RegisterUrlsHandlers(a.Router)
-	a.Router.HandleFunc("/{id}", redirector)
+	a.Router.HandleFunc("/{id}", Redirect)
 
 }
 
