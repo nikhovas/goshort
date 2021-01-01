@@ -3,8 +3,13 @@ package src
 import (
 	"github.com/gorilla/mux"
 	"github.com/mediocregopher/radix/v3"
+	"log"
 	"net/http"
 )
+
+func faviconHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+}
 
 type App struct {
 	Router *mux.Router
@@ -15,12 +20,16 @@ func (a *App) Initialize(network, ip string, poolSize int) {
 	var err error
 	a.Pool, err = radix.NewPool(network, ip, poolSize)
 	if err != nil {
-		// handle error
+		log.Panicln("Can't connect to redis database. Aborting.")
+	} else {
+		log.Println("Connected to redis database.")
 	}
 
 	a.Router = mux.NewRouter().StrictSlash(true)
+	a.Router.HandleFunc("/favicon.ico", faviconHandler)
 	RegisterUrlsHandlers(a.Router)
 	a.Router.HandleFunc("/{id}", redirector)
+
 }
 
 func (a *App) Run(addr string) {

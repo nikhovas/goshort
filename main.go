@@ -9,7 +9,6 @@ import (
 func main() {
 	utils.SetupViper()
 	src.AppObject = src.App{}
-	//app := src.App{}
 
 	src.AppObject.Initialize(
 		viper.GetString("redis.network"),

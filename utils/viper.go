@@ -9,7 +9,7 @@ import (
 func SetupViper() {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.SetEnvPrefix("UrlShortener")
+	viper.SetEnvPrefix("goshort")
 
 	viper.SetDefault("port", "80")
 	viper.SetDefault("redis.network", "tcp")

@@ -1,0 +1,35 @@
+version: "3"
+
+services:
+  redis:
+    image: redis:alpine
+#    ports:
+#      - 6379:6379
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    volumes:
+      - $PWD/redis-data:/var/lib/redis
+      - $PWD/redis.config:/usr/local/etc/redis/redis.conf
+
+    networks:
+      node_net:
+        ipv4_address: 172.28.1.4
+  goshort:
+    environment:
+      - GOSHORT_REDIS_IP=172.28.1.4:6379
+    image: nikhovas/goshort:alpine
+    ports:
+      - 0.0.0.0:80:80
+    depends_on:
+      - redis
+    networks:
+      node_net:
+        ipv4_address: 172.28.1.5
+
+
+networks:
+  node_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
