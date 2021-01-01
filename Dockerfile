@@ -1,5 +1,4 @@
 FROM golang:1.14.3-alpine AS build
-COPY --from=redis /usr/local/bin/redis-server /usr/local/bin/redis-server
 WORKDIR /src
 ENV CGO_ENABLED=0
 COPY . .
