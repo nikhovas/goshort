@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func SetupViper() {
+func SetupViper(configFile string) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.SetEnvPrefix("goshort")
@@ -15,9 +15,7 @@ func SetupViper() {
 	viper.SetDefault("token", "")
 	viper.SetDefault("redis.ip", "127.0.0.1:6379")
 	viper.SetDefault("redis.poolSize", 10)
-	viper.SetDefault("configFile", "")
 
-	configFile := viper.GetString("configFile")
 	if configFile != "" {
 		viper.SetConfigFile(configFile)
 		err := viper.ReadInConfig()

@@ -1,14 +1,16 @@
-package main
+package goshort
 
 import (
-	"github.com/spf13/viper"
-	"goshort/src"
+	"flag"
 	"goshort/utils"
 )
 
 func main() {
-	utils.SetupViper()
-	src.AppObject = src.App{}
-	src.AppObject.Initialize(viper.GetString("redis.ip"), viper.GetInt("redis.poolSize"))
-	src.AppObject.Run(":" + viper.GetString("port"))
+	useColor := flag.String("config", "", "display colorized output")
+	flag.Parse()
+
+	utils.SetupViper(*useColor)
+	AppObject = App{}
+	AppObject.Initialize()
+	AppObject.Run()
 }

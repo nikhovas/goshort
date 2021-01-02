@@ -1,10 +1,14 @@
 # GoShort
 
+![Linter](https://img.shields.io/github/workflow/status/nikhovas/goshort/lint?style=flat-square&label=Build)
+![Testing](https://img.shields.io/github/workflow/status/nikhovas/goshort/test?style=flat-square&label=Testing)
+![Dockerized](https://img.shields.io/github/workflow/status/nikhovas/goshort/dockerize?style=flat-square&label=Dockerize)
+![DockerFriendly](https://img.shields.io/badge/Docker-Friendly-blue?style=flat-square)
+
 Url shortener written in Go. Supports generic/specified key setting and REST api for urls.
 Needs Redis. Docker-friendly.
 
 - [GoShort](#goshort)
-    * [Build status](#build-status)
     * [Configuration](#configuration)
     * [Rest API](#rest-api)
         + [Examples](#examples)
@@ -15,15 +19,10 @@ Needs Redis. Docker-friendly.
             - [DELETE request](#delete-request)
         + [Authorization](#authorization)
 
-## Build status
-
-![Linter](https://github.com/nikhovas/goshort/workflows/lint/badge.svg)
-![Testing](https://github.com/nikhovas/goshort/workflows/test/badge.svg)
-![Dockerized](https://github.com/nikhovas/goshort/workflows/dockerize/badge.svg)
 
 ## Configuration
 
-You can use enviromental variables or config file to setup app.
+You can use environmental variables or config file to set up app.
 
 | Name                   | Description                                        | Default value  |
 |------------------------|----------------------------------------------------|----------------|
@@ -32,10 +31,14 @@ You can use enviromental variables or config file to setup app.
 | GOSHORT_REDIS_IP       | Address of redis server                            | 127.0.0.1:6379 |
 | GOSHORT_REDIS_POOLSIZE | Number of opened connections                       | 10             |
 
-Example of config file:
+Example of full config file:
 
 ```yml
-todo
+redis:
+  ip: 127.0.0.1:6379
+  poolSize: 10
+token: asdf
+port: 80
 ```
 
 ## Rest API

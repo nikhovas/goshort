@@ -6,6 +6,7 @@ ARG TARGETOS
 ARG TARGETARCH
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /bin/goshort .
 
+
 FROM golang:1.14.3-alpine
 COPY --from=build /bin/goshort /bin/goshort
 ENTRYPOINT ["/bin/goshort"]

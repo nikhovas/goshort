@@ -1,22 +1,32 @@
-package src
+package goshort
 
 import (
 	"github.com/gorilla/mux"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 )
-
-func faviconHandler(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
-}
 
 type App struct {
 	Router *mux.Router
 	Pool   *radix.Pool
 }
 
-func (a *App) Initialize(ip string, poolSize int) {
+var AppObject = App{}
+
+func Redirect(w http.ResponseWriter, r *http.Request) {
+	url, _ := CreateUrlFromRedis(AppObject.Pool, mux.Vars(r)["id"])
+	http.Redirect(w, r, url.Url, url.Code)
+}
+
+func faviconHandler(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+}
+
+func (a *App) Initialize() {
+	ip := viper.GetString("redis.ip")
+	poolSize := viper.GetInt("redis.poolSize")
 	var err error
 	a.Pool, err = radix.NewPool("tcp", ip, poolSize)
 	if err != nil {
@@ -32,7 +42,7 @@ func (a *App) Initialize(ip string, poolSize int) {
 
 }
 
-func (a *App) Run(addr string) {
+func (a *App) Run() {
 	http.Handle("/", a.Router)
-	_ = http.ListenAndServe(addr, nil)
+	_ = http.ListenAndServe(":"+viper.GetString("port"), nil)
 }

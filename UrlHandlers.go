@@ -1,17 +1,18 @@
-package src
+package goshort
 
 import (
 	"github.com/PuerkitoBio/purell"
 	"github.com/gorilla/mux"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/spf13/viper"
+	"goshort/utils"
 	"net/http"
 )
 
 func urlsPostHandler(w http.ResponseWriter, r *http.Request) {
-	url_, err := UrlFromHttpRequest(w, r)
+	url_, err := CreateUrlFromHttpRequest(w, r)
 	if err != nil {
-		ErrorToResponse(err, w)
+		utils.ErrorToResponse(err, w)
 		return
 	}
 
@@ -22,7 +23,7 @@ func urlsPostHandler(w http.ResponseWriter, r *http.Request) {
 	url_.Url, err = purell.NormalizeURLString(url_.Url,
 		purell.FlagLowercaseScheme|purell.FlagLowercaseHost|purell.FlagUppercaseEscapes)
 	if err != nil {
-		ErrorToResponse(&malformedRequest{status: 500, msg: "incorrect URL"}, w)
+		utils.ErrorToResponse(&utils.SimpleResponse{Status: 500, Msg: "incorrect URL"}, w)
 		return
 	}
 
@@ -31,16 +32,16 @@ func urlsPostHandler(w http.ResponseWriter, r *http.Request) {
 		added := false
 		for !added {
 			var potentialKey string
-			potentialKey, err = TryAutogenUrlFromRedis(AppObject.Pool, url_.Url)
+			potentialKey, err = GetAutogenUrlFromRedis(AppObject.Pool, url_.Url)
 			if err != nil {
-				ErrorToResponse(&malformedRequest{status: http.StatusInternalServerError, msg: "Redis error"}, w)
+				utils.ErrorToResponse(&utils.SimpleResponse{Status: http.StatusInternalServerError, Msg: "Redis error"}, w)
 				return
 			}
 
 			if potentialKey != "" {
 				var potentialUrl Url
-				if potentialUrl, err = UrlFromRedis(AppObject.Pool, potentialKey); err != nil {
-					ErrorToResponse(err, w)
+				if potentialUrl, err = CreateUrlFromRedis(AppObject.Pool, potentialKey); err != nil {
+					utils.ErrorToResponse(err, w)
 					return
 				}
 
@@ -49,53 +50,53 @@ func urlsPostHandler(w http.ResponseWriter, r *http.Request) {
 					added = true
 				}
 			} else {
-				url_.Key = GetNewUrlString(AppObject.Pool)
+				url_.Key = utils.GetNewUrlString(AppObject.Pool)
 
-				if added, err = UrlToRedisInitial(AppObject.Pool, url_); err != nil {
-					ErrorToResponse(err, w)
+				if added, err = url_.CreateInRedis(AppObject.Pool); err != nil {
+					utils.ErrorToResponse(err, w)
 					return
 				}
 			}
 		}
 	} else {
-		result, err := UrlToRedisInitial(AppObject.Pool, url_)
+		result, err := url_.CreateInRedis(AppObject.Pool)
 		if err != nil {
-			ErrorToResponse(err, w)
+			utils.ErrorToResponse(err, w)
 			return
 		} else if !result {
-			ErrorToResponse(&malformedRequest{status: http.StatusConflict, msg: "Value already exists"}, w)
+			utils.ErrorToResponse(&utils.SimpleResponse{Status: http.StatusConflict, Msg: "Value already exists"}, w)
 			return
 		}
 	}
 
-	UrlToHttpResponse(url_, w)
+	url_.ToHttpResponse(w)
 }
 
 func urlsGetHandler(w http.ResponseWriter, _ *http.Request, url Url) {
-	UrlToHttpResponse(url, w)
+	url.ToHttpResponse(w)
 }
 
 func urlsPatchRequest(w http.ResponseWriter, r *http.Request, url Url) {
-	newUrl, err := UrlFromHttpRequest(w, r)
+	newUrl, err := CreateUrlFromHttpRequest(w, r)
 	if err != nil {
-		ErrorToResponse(err, w)
+		utils.ErrorToResponse(err, w)
 		return
 	}
 
 	url.Url = newUrl.Url
-	err = UrlToRedis(AppObject.Pool, url)
+	err = url.UpdateInRedis(AppObject.Pool)
 	if err != nil {
-		ErrorToResponse(err, w)
+		utils.ErrorToResponse(err, w)
 		return
 	}
 
-	UrlToHttpResponse(url, w)
+	url.ToHttpResponse(w)
 }
 
 func urlsDeleteRequest(w http.ResponseWriter, _ *http.Request, key string) {
 	err := AppObject.Pool.Do(radix.Cmd(nil, "DEL", key))
 	if err != nil {
-		ErrorToResponse(err, w)
+		utils.ErrorToResponse(err, w)
 		return
 	}
 }
@@ -106,10 +107,10 @@ func checkTokenMiddleware(next func(w http.ResponseWriter, r *http.Request)) fun
 		if correctToken != "" {
 			token := r.Header.Get("Authorization")
 			if token == "" {
-				ErrorToResponse(&malformedRequest{status: http.StatusUnauthorized, msg: "Need auth credentials"}, w)
+				utils.ErrorToResponse(&utils.SimpleResponse{Status: http.StatusUnauthorized, Msg: "Need auth credentials"}, w)
 				return
 			} else if "Bearer "+correctToken != token {
-				ErrorToResponse(&malformedRequest{status: http.StatusUnauthorized, msg: "Bad auth credentials"}, w)
+				utils.ErrorToResponse(&utils.SimpleResponse{Status: http.StatusUnauthorized, Msg: "Bad auth credentials"}, w)
 				return
 			}
 		}
@@ -118,9 +119,9 @@ func checkTokenMiddleware(next func(w http.ResponseWriter, r *http.Request)) fun
 }
 
 func urlDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	url, err := UrlFromRedis(AppObject.Pool, mux.Vars(r)["id"])
+	url, err := CreateUrlFromRedis(AppObject.Pool, mux.Vars(r)["id"])
 	if err != nil {
-		ErrorToResponse(err, w)
+		utils.ErrorToResponse(err, w)
 		return
 	}
 
