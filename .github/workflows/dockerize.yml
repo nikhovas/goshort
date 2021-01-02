@@ -15,8 +15,7 @@ jobs:
       - name: Push to Docker Hub
         uses: docker/build-push-action@v2
         with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
           repository: nikhovas/redis
           tag_with_ref: true
