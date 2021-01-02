@@ -12,7 +12,7 @@ func SetupViper() {
 	viper.SetEnvPrefix("goshort")
 
 	viper.SetDefault("port", "80")
-	viper.SetDefault("redis.network", "tcp")
+	viper.SetDefault("token", "")
 	viper.SetDefault("redis.ip", "127.0.0.1:6379")
 	viper.SetDefault("redis.poolSize", 10)
 	viper.SetDefault("configFile", "")

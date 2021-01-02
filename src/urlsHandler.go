@@ -4,6 +4,7 @@ import (
 	"github.com/PuerkitoBio/purell"
 	"github.com/gorilla/mux"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/spf13/viper"
 	"net/http"
 )
 
@@ -99,6 +100,23 @@ func urlsDeleteRequest(w http.ResponseWriter, _ *http.Request, key string) {
 	}
 }
 
+func checkTokenMiddleware(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		correctToken := viper.GetString("token")
+		if correctToken != "" {
+			token := r.Header.Get("Authorization")
+			if token == "" {
+				ErrorToResponse(&malformedRequest{status: http.StatusUnauthorized, msg: "Need auth credentials"}, w)
+				return
+			} else if "Bearer "+correctToken != token {
+				ErrorToResponse(&malformedRequest{status: http.StatusUnauthorized, msg: "Bad auth credentials"}, w)
+				return
+			}
+		}
+		next(w, r)
+	}
+}
+
 func urlDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	url, err := UrlFromRedis(AppObject.Pool, mux.Vars(r)["id"])
 	if err != nil {
@@ -106,9 +124,9 @@ func urlDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		urlsGetHandler(w, r, url)
-	} else if r.Method == "PATCH" || r.Method == "PUT" {
+	} else if r.Method == http.MethodPatch || r.Method == http.MethodPut {
 		urlsPatchRequest(w, r, url)
 	} else { // DELETE
 		urlsDeleteRequest(w, r, url.Key)
@@ -116,6 +134,7 @@ func urlDetailsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterUrlsHandlers(router *mux.Router) {
-	router.HandleFunc("/urls/", urlsPostHandler).Methods("POST")
-	router.HandleFunc("/urls/{id}/", urlDetailsHandler).Methods("GET", "PATCH", "PUT", "DELETE")
+	router.HandleFunc("/urls/", checkTokenMiddleware(urlsPostHandler)).Methods(http.MethodPost)
+	router.HandleFunc("/urls/{id}/", checkTokenMiddleware(urlDetailsHandler)).Methods(http.MethodGet,
+		http.MethodPatch, http.MethodPut, http.MethodDelete)
 }

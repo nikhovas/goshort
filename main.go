@@ -9,11 +9,6 @@ import (
 func main() {
 	utils.SetupViper()
 	src.AppObject = src.App{}
-
-	src.AppObject.Initialize(
-		viper.GetString("redis.network"),
-		viper.GetString("redis.ip"),
-		viper.GetInt("redis.poolSize"))
-
+	src.AppObject.Initialize(viper.GetString("redis.ip"), viper.GetInt("redis.poolSize"))
 	src.AppObject.Run(":" + viper.GetString("port"))
 }

@@ -16,9 +16,9 @@ type App struct {
 	Pool   *radix.Pool
 }
 
-func (a *App) Initialize(network, ip string, poolSize int) {
+func (a *App) Initialize(ip string, poolSize int) {
 	var err error
-	a.Pool, err = radix.NewPool(network, ip, poolSize)
+	a.Pool, err = radix.NewPool("tcp", ip, poolSize)
 	if err != nil {
 		log.Panicln("Can't connect to redis database. Aborting.")
 	} else {

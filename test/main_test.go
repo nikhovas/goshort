@@ -27,16 +27,16 @@ var _ = Suite(&MySuite{})
 
 func (s *MySuite) SetUpSuite(_ *C) {
 	utils.SetupViper()
+	viper.SetDefault("token", "demo")
 	src.AppObject = src.App{}
-	src.AppObject.Initialize(viper.GetString("redis.network"),
-		viper.GetString("redis.ip"),
-		viper.GetInt("redis.poolSize"))
+	src.AppObject.Initialize(viper.GetString("redis.ip"), viper.GetInt("redis.poolSize"))
 }
 
 func (s *MySuite) SetAndGetGeneric(c *C, jsonStr []byte, expectedURL *src.Url) {
 	req, err := http.NewRequest("POST", "/urls/", bytes.NewBuffer(jsonStr))
 	c.Check(err, Equals, nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer demo")
 
 	response := executeRequest(src.AppObject, req)
 	c.Check(response.Code, Equals, 200)
@@ -97,4 +97,14 @@ func (s *MySuite) TestNotDuplicatingGenericUrl(c *C) {
 	}
 	s.SetAndGetGeneric(c, []byte(`{"url": "https://fjhdsjkhk.ru"}`), &url)
 	s.SetAndGetGeneric(c, []byte(`{"url": "https://fjhdsjkhk.ru"}`), &url)
+}
+
+func (s *MySuite) TestBadToken(c *C) {
+	req, err := http.NewRequest("POST", "/urls/", bytes.NewBuffer([]byte("")))
+	c.Check(err, Equals, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer ddd")
+
+	response := executeRequest(src.AppObject, req)
+	c.Check(response.Code, Equals, 401)
 }
