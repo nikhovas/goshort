@@ -8,17 +8,30 @@
 Url shortener written in Go. Supports generic/specified key setting and REST api for urls.
 Needs Redis. Docker-friendly.
 
-- [GoShort](#goshort)
-    * [Configuration](#configuration)
-    * [Rest API](#rest-api)
-        + [Examples](#examples)
-            - [Key specified POST request](#key-specified-post-request)
-            - [Generic key POST request](#generic-key-post-request)
-            - [GET request](#get-request)
-            - [PATCH/PUT request](#patch-put-request)
-            - [DELETE request](#delete-request)
-        + [Authorization](#authorization)
+* [Docker](#docker)
+* [Build](#build)
+* [Configuration](#configuration)
+* [Rest API](#rest-api)
+  + [Examples](#examples)
+    - [Key specified POST request](#key-specified-post-request)
+    - [Generic key POST request](#generic-key-post-request)
+    - [GET request](#get-request)
+    - [PATCH/PUT request](#patch-put-request)
+    - [DELETE request](#delete-request)
+  + [Authorization](#authorization)
 
+## Docker
+
+There are two images of GoShort:
+
+- `nikhovas/goshort:alpine` - standalone goshort. Can be used with docker-compose
+- `nikhovas/goshort:redis` - goshort container with embedded Redis database.
+
+All in DockerHub.
+
+## Build
+
+Just `go build -o urlshort .` in the folder of repository.
 
 ## Configuration
 
@@ -252,12 +265,3 @@ If no token is specified, you don't have to write anything to `Authorization` he
 the program won't look to it.
 If the token is specified, but something is wrong with auth in your request, you'll get
 error 401 (Unauthorized).
-
-### Docker
-
-There are two images of GoShort:
-
-- `nikhovas/goshort:alpine` - standalone goshort. Can be used with docker-compose
-- `nikhovas/goshort:redis` - goshort container with embedded Redis database.
-
-All in DockerHub.
