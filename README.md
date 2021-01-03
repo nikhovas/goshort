@@ -5,7 +5,7 @@
 ![Dockerized](https://img.shields.io/github/workflow/status/nikhovas/goshort/dockerize?style=flat-square&label=Dockerize)
 ![DockerFriendly](https://img.shields.io/badge/Docker-Friendly-blue?style=flat-square)
 
-Url shortener written in Go. Supports generic/specified key setting and REST api for urls.
+Url shortener written in Go. Supports generic/specified key setting and REST API for urls.
 Needs Redis. Docker-friendly.
 
 * [Docker](#docker)
@@ -25,7 +25,7 @@ Needs Redis. Docker-friendly.
 There are two images of GoShort:
 
 - `nikhovas/goshort:alpine` - standalone goshort. Can be used with docker-compose
-- `nikhovas/goshort:redis` - goshort container with embedded Redis database.
+- `nikhovas/goshort:redis` - goshort with embedded Redis database.
 
 All in DockerHub.
 
