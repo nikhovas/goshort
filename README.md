@@ -1,6 +1,6 @@
 # GoShort
 
-![Linter](https://img.shields.io/github/workflow/status/nikhovas/goshort/lint?style=flat-square&label=Build)
+![Linter](https://img.shields.io/github/workflow/status/nikhovas/goshort/lint?style=flat-square&label=Linter)
 ![Testing](https://img.shields.io/github/workflow/status/nikhovas/goshort/test?style=flat-square&label=Testing)
 ![Dockerized](https://img.shields.io/github/workflow/status/nikhovas/goshort/dockerize?style=flat-square&label=Dockerize)
 ![DockerFriendly](https://img.shields.io/badge/Docker-Friendly-blue?style=flat-square)
@@ -252,3 +252,12 @@ If no token is specified, you don't have to write anything to `Authorization` he
 the program won't look to it.
 If the token is specified, but something is wrong with auth in your request, you'll get
 error 401 (Unauthorized).
+
+### Docker
+
+There are two images of GoShort:
+
+- `nikhovas/goshort:alpine` - standalone goshort. Can be used with docker-compose
+- `nikhovas/goshort:redis` - goshort container with embedded Redis database.
+
+All in DockerHub.
