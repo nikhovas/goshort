@@ -1,4 +1,4 @@
-package goshort
+package main
 
 import (
 	"flag"

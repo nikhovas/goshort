@@ -1,4 +1,4 @@
-package goshort
+package main
 
 import (
 	"github.com/gorilla/mux"
@@ -17,10 +17,14 @@ var AppObject = App{}
 
 func Redirect(w http.ResponseWriter, r *http.Request) {
 	url, _ := CreateUrlFromRedis(AppObject.Pool, mux.Vars(r)["id"])
-	http.Redirect(w, r, url.Url, url.Code)
+	if url.Url == "" {
+		http.Error(w, "404 Not Found", http.StatusNotFound)
+	} else {
+		http.Redirect(w, r, url.Url, url.Code)
+	}
 }
 
-func faviconHandler(w http.ResponseWriter, _ *http.Request) {
+func FaviconHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
@@ -36,7 +40,7 @@ func (a *App) Initialize() {
 	}
 
 	a.Router = mux.NewRouter().StrictSlash(true)
-	a.Router.HandleFunc("/favicon.ico", faviconHandler)
+	a.Router.HandleFunc("/favicon.ico", FaviconHandler)
 	RegisterUrlsHandlers(a.Router)
 	a.Router.HandleFunc("/{id}", Redirect)
 
