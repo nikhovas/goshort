@@ -5,43 +5,44 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/viper"
 	"goshort/kernel"
-	kernelErrors "goshort/kernel/errors"
+	"goshort/types"
+	kernelErrors "goshort/types/errors"
 	"net/http"
 	"strconv"
 )
 
-type CantDecodeRequestError struct{}
-
-func (e *CantDecodeRequestError) ToMap() map[string]interface{} {
-	data := make(map[string]interface{})
-	data["name"] = "Input.Server.CantDecodeRequest"
-	data["type"] = "error"
-	return data
-}
-
-func (e *CantDecodeRequestError) Error() string {
-	return "Error Input.Server.CantDecodeRequest"
-}
-
-type CantEncodeRequestError struct{}
-
-func (e *CantEncodeRequestError) ToMap() map[string]interface{} {
-	data := make(map[string]interface{})
-	data["name"] = "Input.Server.CantEncodeRequest"
-	data["type"] = "error"
-	return data
-}
-
-func (e *CantEncodeRequestError) Error() string {
-	return "Error Input.Server.CantEncodeRequest"
-}
-
-func CantEncodeRequestErrorWrapper(err error) *CantEncodeRequestError {
-	if err != nil {
-		return &CantEncodeRequestError{}
-	}
-	return nil
-}
+//type CantDecodeRequestError struct{}
+//
+//func (e *CantDecodeRequestError) ToMap() map[string]interface{} {
+//	data := make(map[string]interface{})
+//	data["name"] = "Input.Server.CantDecodeRequest"
+//	data["type"] = "error"
+//	return data
+//}
+//
+//func (e *CantDecodeRequestError) Error() string {
+//	return "Error Input.Server.CantDecodeRequest"
+//}
+//
+//type CantEncodeRequestError struct{}
+//
+//func (e *CantEncodeRequestError) ToMap() map[string]interface{} {
+//	data := make(map[string]interface{})
+//	data["name"] = "Input.Server.CantEncodeRequest"
+//	data["type"] = "error"
+//	return data
+//}
+//
+//func (e *CantEncodeRequestError) Error() string {
+//	return "Error Input.Server.CantEncodeRequest"
+//}
+//
+//func CantEncodeRequestErrorWrapper(err error) *CantEncodeRequestError {
+//	if err != nil {
+//		return &CantEncodeRequestError{}
+//	}
+//	return nil
+//}
 
 type Server struct {
 	echo       *echo.Echo
@@ -52,9 +53,9 @@ type Server struct {
 }
 
 func (server *Server) urlsPostHandler(c echo.Context) error {
-	var newUrl kernel.Url
+	var newUrl types.Url
 	if err := json.NewDecoder(c.Request().Body).Decode(&newUrl); err != nil {
-		return &CantDecodeRequestError{}
+		return nil
 	}
 
 	postedUrl, err := server.Kernel.Post(newUrl)
@@ -63,17 +64,17 @@ func (server *Server) urlsPostHandler(c echo.Context) error {
 		return err
 	}
 
-	return CantEncodeRequestErrorWrapper(c.JSON(http.StatusOK, postedUrl))
+	return c.JSON(http.StatusOK, postedUrl)
 }
 
 func (server *Server) urlsPatchRequest(c echo.Context) error {
 	id := c.Param("id")
-	url_, err := kernel.Object.Get(id)
+	url_, err := server.Kernel.Get(id)
 	if err != nil {
 		return err
 	}
 
-	var newUrl kernel.Url
+	var newUrl types.Url
 	if err := json.NewDecoder(c.Request().Body).Decode(&newUrl); err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func (server *Server) urlsPatchRequest(c echo.Context) error {
 		return err
 	}
 
-	return CantEncodeRequestErrorWrapper(c.JSON(http.StatusOK, url_))
+	return c.JSON(http.StatusOK, url_)
 }
 
 func (server *Server) urlsGetHandler(c echo.Context) error {
@@ -93,7 +94,7 @@ func (server *Server) urlsGetHandler(c echo.Context) error {
 		return err
 	}
 
-	return CantEncodeRequestErrorWrapper(c.JSON(http.StatusOK, url_))
+	return c.JSON(http.StatusOK, url_)
 }
 
 func (server *Server) urlsDeleteRequest(c echo.Context) error {
@@ -108,7 +109,7 @@ func (server *Server) urlsDeleteRequest(c echo.Context) error {
 		return err
 	}
 
-	return CantEncodeRequestErrorWrapper(c.NoContent(http.StatusOK))
+	return c.NoContent(http.StatusOK)
 }
 
 func (server *Server) registerUrlsHandlers(g *echo.Group) {
@@ -174,7 +175,7 @@ type ServerLog struct {
 	Endpoint string
 	Method   string
 	Type     string
-	Error    kernel.AdvancedError
+	Error    types.AdvancedError
 }
 
 func (l *ServerLog) ToMap() map[string]interface{} {
@@ -193,10 +194,10 @@ func (l *ServerLog) ToMap() map[string]interface{} {
 
 func (server *Server) mainLoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var err kernel.AdvancedError
+		var err types.AdvancedError
 		err = nil
 		if err2 := next(c); err2 != nil {
-			httpErr, ok := err2.(echo.HTTPError)
+			//httpErr, ok := err2.(echo.HTTPError)
 			err = &kernelErrors.SimpleErrorWrapper{Err: err2}
 		}
 

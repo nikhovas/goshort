@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/purell"
 	"goshort/kernel"
+	"goshort/types"
 )
 
 type UrlNormalizer struct {
@@ -34,7 +35,7 @@ func (middleware *UrlNormalizer) Init(config map[string]interface{}) error {
 	return nil
 }
 
-func (middleware *UrlNormalizer) Exec(url *kernel.Url) kernel.AdvancedError {
+func (middleware *UrlNormalizer) Exec(url *types.Url) types.AdvancedError {
 	if url.Code == 0 {
 		url.Code = 301
 	}

@@ -7,33 +7,58 @@ import (
 	"goshort/modules/dbModules"
 	"goshort/modules/inputModules"
 	"goshort/modules/logModules"
+	"goshort/types"
 )
+
+//var yamlExample = []byte(`
+//inputs:
+// server:
+//   name: serverInput
+//   ip: ''
+//   port: 80
+//   mode: tcp
+//database:
+// redis:
+//   name: redisDatabase
+//   ip: 127.0.0.1:6379
+//   port: 6379
+//   mode: tcp
+//   pool_size: 10
+//loggers:
+// kafka:
+//   name: kafkaLogger
+//   ip: localhost
+//   port: 9999
+//   topic: goshort_logs
+// console:
+//middlewares:
+// - url_normalizer
+//limits:
+// max_connections: 2000
+//`)
 
 var yamlExample = []byte(`
 inputs:
-  server:
-    name: serverInput
-    ip: ''
-    port: 80
-    mode: tcp
+ server:
+   name: serverInput
+   ip: ''
+   port: 80
+   mode: tcp
 database:
-  redis:
-    name: redisDatabase
-    ip: 127.0.0.1:6379
-    port: 6379
-    mode: tcp
-    pool_size: 10
+ in_memory:
+   name: inMemory
+   max_elements: 100
 loggers:
-  kafka:
-    name: kafkaLogger
-    ip: localhost
-    port: 9999
-    topic: goshort_logs
-  console:
+ kafka:
+   name: kafkaLogger
+   ip: localhost
+   port: 9999
+   topic: goshort_logs
+ console:
 middlewares:
-  - url_normalizer
+ - url_normalizer
 limits:
-  max_connections: 2000
+ max_connections: 2000
 `)
 
 func main() {
@@ -42,10 +67,10 @@ func main() {
 
 	var kernelInstance kernel.Kernel
 
-	var inputs []kernel.InputControllerInterface
+	var inputs []types.InputControllerInterface
 	inputsConfig := viper.GetStringMap("inputs")
 	for k, v := range inputsConfig {
-		var input kernel.InputControllerInterface
+		var input types.InputControllerInterface
 		switch k {
 		case "server":
 			input = &inputModules.Server{Kernel: &kernelInstance}
@@ -58,12 +83,14 @@ func main() {
 		}
 	}
 
-	var database kernel.UrlControllerInterface
+	var database types.UrlControllerInterface
 	databaseConfig := viper.GetStringMap("database")
 	for k, v := range databaseConfig {
 		switch k {
 		case "redis":
 			database = &dbModules.Redis{Kernel: &kernelInstance}
+		case "in_memory":
+			database = &dbModules.InMemory{Kernel: &kernelInstance}
 		default:
 			break
 		}
@@ -74,13 +101,13 @@ func main() {
 	}
 
 	consoleLog := logModules.Console{Kernel: &kernelInstance}
-	loggers := []kernel.LoggerInterface{&consoleLog}
+	loggers := []types.LoggerInterface{&consoleLog}
 
 	kernelInstance = kernel.Kernel{
 		InputControllers:    inputs,
 		UrlController:       database,
 		Loggers:             loggers,
-		Middlewares:         []kernel.MiddlewareInterface{},
+		Middlewares:         []types.MiddlewareInterface{},
 		ExtraordinaryLogger: &consoleLog,
 	}
 

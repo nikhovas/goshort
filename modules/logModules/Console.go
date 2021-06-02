@@ -3,6 +3,7 @@ package logModules
 import (
 	"encoding/json"
 	"goshort/kernel"
+	"goshort/types"
 )
 
 type Console struct {
@@ -19,7 +20,7 @@ func (controller *Console) Run() error {
 	return nil
 }
 
-func (controller *Console) Send(le kernel.Log) {
+func (controller *Console) Send(le types.Log) {
 	b, _ := json.Marshal(le.ToMap())
 	println(string(b))
 }

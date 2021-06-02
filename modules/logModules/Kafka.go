@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"goshort/kernel"
+	"goshort/types"
 )
 
 type Kafka struct {
@@ -25,7 +26,7 @@ func (k *Kafka) Run() error {
 	return err
 }
 
-func (k *Kafka) Send(element kernel.Log) error {
+func (k *Kafka) Send(element types.Log) error {
 	data, _ := json.Marshal(element.ToMap())
 	return k.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &k.topic, Partition: kafka.PartitionAny},

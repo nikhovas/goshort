@@ -1,4 +1,4 @@
-package kernel
+package types
 
 type ModuleInterface interface {
 	Init(config map[string]interface{}) error
