@@ -1,9 +1,9 @@
 package inputModules
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
-	"github.com/spf13/viper"
 	"goshort/kernel"
 	"goshort/types"
 	kernelErrors "goshort/types/errors"
@@ -45,11 +45,17 @@ import (
 //}
 
 type Server struct {
-	echo       *echo.Echo
-	ip         string
-	port       string
-	moduleName string
-	Kernel     *kernel.Kernel
+	types.ModuleBase
+	echo         *echo.Echo
+	ip           string
+	port         string
+	moduleName   string
+	Kernel       *kernel.Kernel
+	nativeClosed bool
+}
+
+func CreateServer(kernel *kernel.Kernel) types.InputControllerInterface {
+	return &Server{Kernel: kernel}
 }
 
 func (server *Server) urlsPostHandler(c echo.Context) error {
@@ -58,7 +64,9 @@ func (server *Server) urlsPostHandler(c echo.Context) error {
 		return nil
 	}
 
-	postedUrl, err := server.Kernel.Post(newUrl)
+	operationNumber := server.Kernel.GetNextOperationNumber()
+
+	postedUrl, err := server.Kernel.Post(operationNumber, newUrl)
 	// add exists error support
 	if err != nil {
 		return err
@@ -68,8 +76,10 @@ func (server *Server) urlsPostHandler(c echo.Context) error {
 }
 
 func (server *Server) urlsPatchRequest(c echo.Context) error {
+	operationNumber := server.Kernel.GetNextOperationNumber()
+
 	id := c.Param("id")
-	url_, err := server.Kernel.Get(id)
+	url_, err := server.Kernel.Get(operationNumber, id)
 	if err != nil {
 		return err
 	}
@@ -80,7 +90,7 @@ func (server *Server) urlsPatchRequest(c echo.Context) error {
 	}
 
 	url_.Url = newUrl.Url
-	if err := server.Kernel.Patch(url_); err != nil {
+	if err := server.Kernel.Patch(operationNumber, url_); err != nil {
 		return err
 	}
 
@@ -88,8 +98,10 @@ func (server *Server) urlsPatchRequest(c echo.Context) error {
 }
 
 func (server *Server) urlsGetHandler(c echo.Context) error {
+	operationNumber := server.Kernel.GetNextOperationNumber()
+
 	id := c.Param("id")
-	url_, err := server.Kernel.Get(id)
+	url_, err := server.Kernel.Get(operationNumber, id)
 	if err != nil {
 		return err
 	}
@@ -98,13 +110,15 @@ func (server *Server) urlsGetHandler(c echo.Context) error {
 }
 
 func (server *Server) urlsDeleteRequest(c echo.Context) error {
+	operationNumber := server.Kernel.GetNextOperationNumber()
+
 	id := c.Param("id")
-	url_, err := server.Kernel.Get(id)
+	url_, err := server.Kernel.Get(operationNumber, id)
 	if err != nil {
 		return err
 	}
 
-	err = server.Kernel.Delete(url_)
+	err = server.Kernel.Delete(operationNumber, url_)
 	if err != nil {
 		return err
 	}
@@ -138,8 +152,10 @@ func (server *Server) registerUrlsHandlers(g *echo.Group) {
 //}
 
 func (server *Server) redirect(c echo.Context) error {
+	operationNumber := server.Kernel.GetNextOperationNumber()
+
 	id := c.Param("id")
-	urlVal, _ := server.Kernel.Get(id)
+	urlVal, _ := server.Kernel.Get(operationNumber, id)
 	if urlVal.Url == "" {
 		return c.HTML(http.StatusNotFound, "<h1>Not found.</h1>")
 	}
@@ -161,7 +177,7 @@ func errorMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return nil
 		}
 		switch err {
-		case kernelErrors.UrlNotFoundError:
+		case kernelErrors.NotFoundError:
 			return c.NoContent(http.StatusNotFound)
 		default:
 			return err
@@ -175,7 +191,7 @@ type ServerLog struct {
 	Endpoint string
 	Method   string
 	Type     string
-	Error    types.AdvancedError
+	Error    types.Log
 }
 
 func (l *ServerLog) ToMap() map[string]interface{} {
@@ -194,7 +210,7 @@ func (l *ServerLog) ToMap() map[string]interface{} {
 
 func (server *Server) mainLoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var err types.AdvancedError
+		var err types.Log
 		err = nil
 		if err2 := next(c); err2 != nil {
 			//httpErr, ok := err2.(echo.HTTPError)
@@ -214,17 +230,22 @@ func (server *Server) mainLoggingMiddleware(next echo.HandlerFunc) echo.HandlerF
 		} else {
 			le.Type = "error"
 		}
-		server.Kernel.Log(le)
+		server.Kernel.SystemLog(le)
 		return nil
 	}
 }
 
 func (server *Server) Init(config map[string]interface{}) error {
+	if err := server.ModuleBase.Init(config); err != nil {
+		return err
+	}
+
 	server.echo = echo.New()
 	server.moduleName = config["name"].(string)
 	server.ip = config["ip"].(string)
 	server.port = strconv.Itoa(config["port"].(int))
 	server.echo.HideBanner = true
+	server.echo.HidePort = true
 
 	api := server.echo.Group("api")
 	api.POST("/urls/", server.urlsPostHandler)
@@ -240,8 +261,24 @@ func (server *Server) Init(config map[string]interface{}) error {
 }
 
 func (server *Server) Run() error {
-	viper.GetString("port")
-	return server.echo.Start(server.ip + ":" + server.port)
+	go func() {
+		defer server.Kernel.OperationDone()
+		server.Kernel.SystemLog(&kernelErrors.GenericLog{Name: "Server.Started", IsError: false})
+		defer server.Kernel.SystemLog(&kernelErrors.GenericLog{Name: "Server.Stopped", IsError: false})
+		err := server.echo.Start(server.ip + ":" + server.port)
+		if err != nil {
+			if !(err == http.ErrServerClosed && server.nativeClosed) {
+				server.Kernel.SystemLog(err)
+			}
+		}
+	}()
+	return nil
+}
+
+func (server *Server) Stop() error {
+	server.nativeClosed = true
+	ctx := context.Background()
+	return server.echo.Shutdown(ctx)
 }
 
 func (server *Server) GetName() string {

@@ -35,22 +35,49 @@ func (e *SimpleErrorWrapper) Error() string {
 	return "Error SimpleError " + e.Err.Error()
 }
 
-type GenericError struct {
-	Name string
+type GenericLog struct {
+	Name    string
+	IsError bool
 }
 
-func (e *GenericError) ToMap() map[string]interface{} {
+func (e *GenericLog) ToMap() map[string]interface{} {
 	data := make(map[string]interface{})
 	data["name"] = e.Name
-	data["type"] = "error"
+	if e.IsError {
+		data["type"] = "error"
+	} else {
+		data["type"] = "log"
+	}
+
 	return data
 }
 
-func (e *GenericError) Error() string {
+func (e *GenericLog) Error() string {
 	return "Error " + e.Name
 }
 
-var UrlNotFoundError = &GenericError{Name: "Common.UrlNotFound"}
-var KeyNotFoundError = &GenericError{Name: "Common.KeyNotFoundError"}
-var ValueAlreadyExistsError = &GenericError{Name: "Common.ValueAlreadyExistsError"}
-var GenericKeysAreNotSupported = &GenericError{Name: "Common.GenericKeysAreNotSupported"}
+var ValueAlreadyExistsError = &GenericLog{Name: "Common.ValueAlreadyExistsError", IsError: true}
+var GenericKeysAreNotSupported = &GenericLog{Name: "Common.GenericKeysAreNotSupported", IsError: true}
+var NotFoundError = &GenericLog{Name: "Common.NotFoundError", IsError: true}
+var NotImplementedError = &GenericLog{Name: "Common.NotImplementedError", IsError: true}
+
+type BadConnectionError struct {
+	Host      string
+	Port      int
+	Protocol  string
+	Retryable bool
+}
+
+func (bce *BadConnectionError) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"name":     "Common.BadConnectionError",
+		"type":     "error",
+		"host":     bce.Host,
+		"port":     bce.Port,
+		"protocol": bce.Protocol,
+	}
+}
+
+func (bce BadConnectionError) Error() string {
+	return "Error Common.BadConnectionError"
+}

@@ -52,9 +52,13 @@ loggers:
  kafka:
    name: kafkaLogger
    ip: localhost
-   port: 9999
-   topic: goshort_logs
+   port: 9092
+   topic: test
+   max_retry_attempts: 50
  console:
+   name: consoleLogger
+   extra_logger: true
+   common_logger: true
 middlewares:
  - url_normalizer
 limits:
@@ -67,17 +71,28 @@ func main() {
 
 	var kernelInstance kernel.Kernel
 
+	inputControllerCreators := map[string]func(kernel *kernel.Kernel) types.InputControllerInterface{
+		"server": inputModules.CreateServer,
+	}
+
+	urlControllerCreators := map[string]func(kernel *kernel.Kernel) types.UrlControllerInterface{
+		"redis":     dbModules.CreateRedis,
+		"in_memory": dbModules.CreateInMemory,
+	}
+
+	loggerCreators := map[string]func(kernel *kernel.Kernel) types.LoggerInterface{
+		"console": logModules.CreateConsole,
+		"kafka":   logModules.CreateKafka,
+	}
+
 	var inputs []types.InputControllerInterface
 	inputsConfig := viper.GetStringMap("inputs")
 	for k, v := range inputsConfig {
-		var input types.InputControllerInterface
-		switch k {
-		case "server":
-			input = &inputModules.Server{Kernel: &kernelInstance}
-		default:
-			break
-		}
-		if input != nil {
+		creator, ok := inputControllerCreators[k]
+		if !ok {
+			continue
+		} else {
+			input := creator(&kernelInstance)
 			_ = input.Init(v.(map[string]interface{}))
 			inputs = append(inputs, input)
 		}
@@ -86,23 +101,30 @@ func main() {
 	var database types.UrlControllerInterface
 	databaseConfig := viper.GetStringMap("database")
 	for k, v := range databaseConfig {
-		switch k {
-		case "redis":
-			database = &dbModules.Redis{Kernel: &kernelInstance}
-		case "in_memory":
-			database = &dbModules.InMemory{Kernel: &kernelInstance}
-		default:
-			break
-		}
-		if database != nil {
+		creator, ok := urlControllerCreators[k]
+		if !ok {
+			continue
+		} else {
+			database = creator(&kernelInstance)
 			_ = database.Init(v.(map[string]interface{}))
 			break
 		}
 	}
 
-	consoleLog := logModules.Console{Kernel: &kernelInstance}
-	loggers := []types.LoggerInterface{&consoleLog}
+	var loggers []types.LoggerInterface
+	loggersConfig := viper.GetStringMap("loggers")
+	for k, v := range loggersConfig {
+		creator, ok := loggerCreators[k]
+		if !ok {
+			continue
+		} else {
+			logger := creator(&kernelInstance)
+			_ = logger.Init(v.(map[string]interface{}))
+			loggers = append(loggers, logger)
+		}
+	}
 
+	consoleLog := logModules.Console{Kernel: &kernelInstance}
 	kernelInstance = kernel.Kernel{
 		InputControllers:    inputs,
 		UrlController:       database,
@@ -111,8 +133,23 @@ func main() {
 		ExtraordinaryLogger: &consoleLog,
 	}
 
-	err := kernelInstance.Run()
+	err := kernelInstance.Run(true)
 	if err != nil {
 		print(err.Error())
 	}
+
+	//sigs := make(chan os.Signal, 1)
+	//done := make(chan bool, 1)
+	//
+	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	//go func() {
+	//	sig := <-sigs
+	//	fmt.Println()
+	//	fmt.Println(sig)
+	//	done <- true
+	//}()
+	//
+	//fmt.Println("awaiting signal")
+	//<-done
+	//fmt.Println("exiting")
 }

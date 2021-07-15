@@ -11,6 +11,7 @@ import (
 )
 
 type Redis struct {
+	types.ModuleBase
 	pool     *radix.Pool
 	ip       string
 	poolSize int
@@ -18,17 +19,40 @@ type Redis struct {
 	Kernel   *kernel.Kernel
 }
 
+func CreateRedis(kernel *kernel.Kernel) types.UrlControllerInterface {
+	return &Redis{Kernel: kernel}
+}
+
 func (controller *Redis) Init(config map[string]interface{}) error {
+	if err := controller.ModuleBase.Init(config); err != nil {
+		return err
+	}
 	controller.pool = nil
 	controller.ip = config["ip"].(string)
 	controller.poolSize = config["pool_size"].(int)
 	return nil
 }
 
-func (controller *Redis) Run() error {
+func (controller *Redis) Connect() error {
 	var err error
 	controller.pool, err = radix.NewPool("tcp", controller.ip, controller.poolSize)
 	return err
+}
+
+func (controller *Redis) Run() error {
+	defer controller.Kernel.OperationDone()
+	return controller.Connect()
+}
+
+func (controller *Redis) Stop() error {
+	if controller.pool != nil {
+		return controller.pool.Close()
+	}
+	return nil
+}
+
+func (controller *Redis) TryReconnect() error {
+	return controller.Connect()
 }
 
 func (controller *Redis) Get(key string) (types.Url, error) {
@@ -37,7 +61,7 @@ func (controller *Redis) Get(key string) (types.Url, error) {
 		return types.Url{}, err
 	}
 	if preUrl == "" {
-		return types.Url{}, kernelErrors.UrlNotFoundError
+		return types.Url{}, kernelErrors.NotFoundError
 	}
 
 	urlData, err := types.FromString(preUrl)
@@ -55,13 +79,13 @@ func (controller *Redis) Post(newUrl types.Url) (types.Url, error) {
 		added := false
 		for !added {
 			potentialKey, err := controller.GetPotentialKey(newUrl.Url)
-			if err != nil && !errors.Is(err, kernelErrors.KeyNotFoundError) {
+			if err != nil && !errors.Is(err, kernelErrors.NotFoundError) {
 				return types.Url{}, err
 			}
 
 			if err == nil { // key is found
 				potentialUrl, err := controller.Get(potentialKey)
-				if err != nil && !errors.Is(err, kernelErrors.KeyNotFoundError) {
+				if err != nil && !errors.Is(err, kernelErrors.NotFoundError) {
 					return types.Url{}, err
 				}
 				if potentialUrl.Url == newUrl.Url {
@@ -145,7 +169,7 @@ func (controller *Redis) GetPotentialKey(key string) (string, error) {
 	if err != nil {
 		return "", err
 	} else if preUrl == "" {
-		return "", kernelErrors.KeyNotFoundError
+		return "", kernelErrors.NotFoundError
 	}
 
 	return preUrl, nil

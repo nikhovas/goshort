@@ -12,6 +12,7 @@ import (
 )
 
 type InMemory struct {
+	types.ModuleBase
 	MaxElements         int
 	Kernel              *kernel.Kernel
 	Name                string
@@ -22,13 +23,25 @@ type InMemory struct {
 	mutex               sync.RWMutex
 }
 
+func CreateInMemory(kernel *kernel.Kernel) types.UrlControllerInterface {
+	return &InMemory{Kernel: kernel}
+}
+
 func (controller *InMemory) Init(config map[string]interface{}) error {
+	if err := controller.ModuleBase.Init(config); err != nil {
+		return err
+	}
 	controller.MaxElements = config["max_elements"].(int)
 	controller.Name = config["name"].(string)
 	return nil
 }
 
 func (controller *InMemory) Run() error {
+	defer controller.Kernel.OperationDone()
+	return nil
+}
+
+func (controller *InMemory) Stop() error {
 	return nil
 }
 
@@ -39,7 +52,7 @@ func (controller *InMemory) Get(key string) (types.Url, error) {
 	var url types.Url
 	v, ok := controller.dataStorage.Load(key)
 	if !ok {
-		return url, kernelErrors.KeyNotFoundError
+		return url, kernelErrors.NotFoundError
 	}
 
 	url, ok = v.(types.Url)
@@ -57,7 +70,7 @@ func (controller *InMemory) Post(newUrl types.Url) (types.Url, error) {
 			if ok {
 				potentialKey := v.(string)
 				potentialUrl, err := controller.Get(potentialKey)
-				if err != nil && !errors.Is(err, kernelErrors.KeyNotFoundError) {
+				if err != nil && !errors.Is(err, kernelErrors.NotFoundError) {
 					return types.Url{}, err
 				}
 				if potentialUrl.Url == newUrl.Url {
@@ -133,4 +146,8 @@ func (controller *InMemory) GetName() string {
 
 func (controller *InMemory) GetType() string {
 	return "InMemory"
+}
+
+func (controller *InMemory) TryReconnect() error {
+	return nil
 }

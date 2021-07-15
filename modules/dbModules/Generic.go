@@ -1,6 +1,7 @@
 package dbModules
 
 import (
+	"goshort/kernel"
 	"goshort/types"
 )
 
@@ -11,6 +12,7 @@ type Generic struct {
 	DeleteFunc            func(url_ types.Url) error
 	GenericKeySupportFunc func() bool
 	Name                  string
+	Kernel                kernel.Kernel
 }
 
 func (controller *Generic) Init(config map[string]interface{}) error {
@@ -18,6 +20,7 @@ func (controller *Generic) Init(config map[string]interface{}) error {
 }
 
 func (controller *Generic) Run() error {
+	defer controller.Kernel.OperationDone()
 	return nil
 }
 
