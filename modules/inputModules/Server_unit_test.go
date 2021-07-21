@@ -16,19 +16,19 @@ import (
 
 var NotImplementedError = errors.New("not implemented")
 
-func getDefaultFunc(key string) (types.Url, error) {
+func getDefaultFunc(_ string) (types.Url, error) {
 	return types.Url{}, NotImplementedError
 }
 
-func postDefaultFunc(newUrl types.Url) (types.Url, error) {
+func postDefaultFunc(_ types.Url) (types.Url, error) {
 	return types.Url{}, NotImplementedError
 }
 
-func patchDefaultFunc(patchUrl types.Url) error {
+func patchDefaultFunc(_ types.Url) error {
 	return NotImplementedError
 }
 
-func deleteDefaultFunc(url_ types.Url) error {
+func deleteDefaultFunc(_ string) error {
 	return NotImplementedError
 }
 
@@ -60,13 +60,14 @@ func TestSimpleGet(t *testing.T) {
 		Name:                  "Generic",
 	}
 
-	kernelInstance = kernel.Kernel{
-		InputControllers:    []types.InputControllerInterface{&server},
-		UrlController:       &db,
-		Loggers:             nil,
-		Middlewares:         nil,
-		ExtraordinaryLogger: nil,
-	}
+	kernelInstance = kernel.Kernel{}
+
+	kernelInstance.Logger = &kernel.LoggingKernel{Kernel: &kernelInstance}
+	kernelInstance.Database = &kernel.DatabaseKernel{Kernel: &kernelInstance, Database: &db}
+	kernelInstance.Input = &kernel.InputKernel{Kernel: &kernelInstance, Inputs: []types.InputInterface{&server}}
+	kernelInstance.Middleware = &kernel.MiddlewareKernel{Kernel: &kernelInstance}
+	kernelInstance.Reconnection = kernel.ReconnectionKernel{Kernel: &kernelInstance}
+	kernelInstance.Signal = kernel.SignalKernel{Kernel: &kernelInstance}
 
 	req := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
 	rec := httptest.NewRecorder()
@@ -98,13 +99,14 @@ func postTestHelper(t *testing.T, postFunc func(newUrl types.Url) (types.Url, er
 		Name:                  "Generic",
 	}
 
-	kernelInstance = kernel.Kernel{
-		InputControllers:    []types.InputControllerInterface{&server},
-		UrlController:       &db,
-		Loggers:             nil,
-		Middlewares:         nil,
-		ExtraordinaryLogger: nil,
-	}
+	kernelInstance = kernel.Kernel{}
+
+	kernelInstance.Logger = &kernel.LoggingKernel{Kernel: &kernelInstance}
+	kernelInstance.Database = &kernel.DatabaseKernel{Kernel: &kernelInstance, Database: &db}
+	kernelInstance.Input = &kernel.InputKernel{Kernel: &kernelInstance, Inputs: []types.InputInterface{&server}}
+	kernelInstance.Middleware = &kernel.MiddlewareKernel{Kernel: &kernelInstance}
+	kernelInstance.Reconnection = kernel.ReconnectionKernel{Kernel: &kernelInstance}
+	kernelInstance.Signal = kernel.SignalKernel{Kernel: &kernelInstance}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/urls/", strings.NewReader(inputString))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

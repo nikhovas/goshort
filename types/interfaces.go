@@ -1,8 +1,20 @@
 package types
 
+import (
+	"sync"
+)
+
+type KernelInterface interface {
+	SetModuleRunState(module ModuleInterface)
+	SetModuleStopState(module ModuleInterface)
+
+	GetLoggerCreators() map[string]func(kernel KernelInterface) LoggerInterface
+	ErrorManage(err error, module ModuleInterface)
+}
+
 type ModuleInterface interface {
 	Init(config map[string]interface{}) error
-	Run() error
+	Run(wg *sync.WaitGroup) error
 	Stop() error
 	GetName() string
 	GetType() string
@@ -11,35 +23,30 @@ type ModuleInterface interface {
 	IsAvailable() bool
 	SetAvailable()
 	TryReconnect() error
-	//TryGetReconnectControl() bool
-	//CloseReconnectingMode()
 	SetUnavailableAndTryGetReconnectionControl() bool
-
 	GetDeath() bool
 	SetDeath()
 	UnsetDeathAndTryGetReconnectionControl() bool
 }
 
-type InputControllerInterface interface {
+type InputInterface interface {
 	ModuleInterface
 }
 
-type UrlControllerInterface interface {
+type DatabaseInterface interface {
 	ModuleInterface
 	Get(key string) (Url, error)
 	Post(newUrl Url) (Url, error)
 	Patch(patchUrl Url) error
-	Delete(url_ Url) error
+	Delete(key string) error
 	GenericKeySupport() bool
 }
 
 type LoggerInterface interface {
 	ModuleInterface
 	Send(element Log) error
-	ClientConnectionLogs() bool
-	SystemLogs() bool
-	IsCommonLogger() bool
-	IsExtraLogger() bool
+	SendError(err error) error
+	SendBatch(batch *LoggingQueueNode) error
 }
 
 type MiddlewareInterface interface {
@@ -52,16 +59,19 @@ type Log interface {
 	ToMap() map[string]interface{}
 }
 
-//type AdvancedError interface {
-//	Log
-//	Error() string
-//}
-//
-//func GetErrorDescription(err error) interface{} {
-//	v, ok := err.(AdvancedError)
-//	if ok {
-//		return v.ToMap()
-//	} else {
-//		return err.Error()
-//	}
-//}
+type LoggingQueueNode struct {
+	Next *LoggingQueueNode
+	Log  Log
+}
+
+func (node *LoggingQueueNode) Len() int {
+	counter := 0
+
+	metaElem := node
+	for metaElem != nil {
+		counter += 1
+		metaElem = metaElem.Next
+	}
+
+	return counter
+}

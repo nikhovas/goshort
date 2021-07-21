@@ -2,17 +2,18 @@ package logModules
 
 import (
 	"encoding/json"
-	"goshort/kernel"
+	"goshort/kernel/utils/other"
 	"goshort/types"
+	"sync"
 )
 
 type Console struct {
 	types.LoggerBase
 	name   string
-	Kernel *kernel.Kernel
+	Kernel types.KernelInterface
 }
 
-func CreateConsole(kernel *kernel.Kernel) types.LoggerInterface {
+func CreateConsole(kernel types.KernelInterface) types.LoggerInterface {
 	return &Console{Kernel: kernel}
 }
 
@@ -22,8 +23,9 @@ func (controller *Console) Init(config map[string]interface{}) error {
 	return nil
 }
 
-func (controller *Console) Run() error {
-	defer controller.Kernel.OperationDone()
+func (controller *Console) Run(wg *sync.WaitGroup) error {
+	wg.Done()
+	controller.IsAvailableVal = 1
 	return nil
 }
 
@@ -34,6 +36,21 @@ func (controller *Console) Stop() error {
 func (controller *Console) Send(le types.Log) error {
 	b, _ := json.Marshal(le.ToMap())
 	println(string(b))
+	return nil
+}
+
+func (controller *Console) SendError(err error) error {
+	return controller.Send(other.InterfaceToLogWrapper(err))
+}
+
+func (controller *Console) SendBatch(batch *types.LoggingQueueNode) error {
+	for batch != nil {
+		err := controller.Send(batch.Log)
+		if err != nil {
+			return err
+		}
+		batch = batch.Next
+	}
 	return nil
 }
 

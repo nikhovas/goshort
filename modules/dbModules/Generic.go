@@ -3,24 +3,30 @@ package dbModules
 import (
 	"goshort/kernel"
 	"goshort/types"
+	"sync"
 )
 
 type Generic struct {
+	types.ModuleBase
 	GetFunc               func(key string) (types.Url, error)
 	PostFunc              func(newUrl types.Url) (types.Url, error)
 	PatchFunc             func(patchUrl types.Url) error
-	DeleteFunc            func(url_ types.Url) error
+	DeleteFunc            func(key string) error
 	GenericKeySupportFunc func() bool
 	Name                  string
 	Kernel                kernel.Kernel
 }
 
-func (controller *Generic) Init(config map[string]interface{}) error {
+func (controller *Generic) Init(_ map[string]interface{}) error {
 	return nil
 }
 
-func (controller *Generic) Run() error {
-	defer controller.Kernel.OperationDone()
+func (controller *Generic) Run(wg *sync.WaitGroup) error {
+	wg.Done()
+	return nil
+}
+
+func (controller *Generic) Stop() error {
 	return nil
 }
 
@@ -36,8 +42,8 @@ func (controller *Generic) Patch(patchUrl types.Url) error {
 	return controller.PatchFunc(patchUrl)
 }
 
-func (controller *Generic) Delete(url_ types.Url) error {
-	return controller.DeleteFunc(url_)
+func (controller *Generic) Delete(key string) error {
+	return controller.DeleteFunc(key)
 }
 
 func (controller *Generic) GenericKeySupport() bool {
@@ -49,5 +55,5 @@ func (controller *Generic) GetName() string {
 }
 
 func (controller *Generic) GetType() string {
-	return "Generic"
+	return "Database.Generic"
 }

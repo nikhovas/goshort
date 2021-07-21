@@ -9,40 +9,9 @@ import (
 	kernelErrors "goshort/types/errors"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 )
-
-//type CantDecodeRequestError struct{}
-//
-//func (e *CantDecodeRequestError) ToMap() map[string]interface{} {
-//	data := make(map[string]interface{})
-//	data["name"] = "Input.Server.CantDecodeRequest"
-//	data["type"] = "error"
-//	return data
-//}
-//
-//func (e *CantDecodeRequestError) Error() string {
-//	return "Error Input.Server.CantDecodeRequest"
-//}
-//
-//type CantEncodeRequestError struct{}
-//
-//func (e *CantEncodeRequestError) ToMap() map[string]interface{} {
-//	data := make(map[string]interface{})
-//	data["name"] = "Input.Server.CantEncodeRequest"
-//	data["type"] = "error"
-//	return data
-//}
-//
-//func (e *CantEncodeRequestError) Error() string {
-//	return "Error Input.Server.CantEncodeRequest"
-//}
-//
-//func CantEncodeRequestErrorWrapper(err error) *CantEncodeRequestError {
-//	if err != nil {
-//		return &CantEncodeRequestError{}
-//	}
-//	return nil
-//}
 
 type Server struct {
 	types.ModuleBase
@@ -54,7 +23,7 @@ type Server struct {
 	nativeClosed bool
 }
 
-func CreateServer(kernel *kernel.Kernel) types.InputControllerInterface {
+func CreateServer(kernel *kernel.Kernel) types.InputInterface {
 	return &Server{Kernel: kernel}
 }
 
@@ -64,9 +33,7 @@ func (server *Server) urlsPostHandler(c echo.Context) error {
 		return nil
 	}
 
-	operationNumber := server.Kernel.GetNextOperationNumber()
-
-	postedUrl, err := server.Kernel.Post(operationNumber, newUrl)
+	postedUrl, err := server.Kernel.Database.Post(newUrl)
 	// add exists error support
 	if err != nil {
 		return err
@@ -76,10 +43,8 @@ func (server *Server) urlsPostHandler(c echo.Context) error {
 }
 
 func (server *Server) urlsPatchRequest(c echo.Context) error {
-	operationNumber := server.Kernel.GetNextOperationNumber()
-
 	id := c.Param("id")
-	url_, err := server.Kernel.Get(operationNumber, id)
+	url_, err := server.Kernel.Database.Get(id)
 	if err != nil {
 		return err
 	}
@@ -90,7 +55,7 @@ func (server *Server) urlsPatchRequest(c echo.Context) error {
 	}
 
 	url_.Url = newUrl.Url
-	if err := server.Kernel.Patch(operationNumber, url_); err != nil {
+	if err := server.Kernel.Database.Patch(url_); err != nil {
 		return err
 	}
 
@@ -98,10 +63,8 @@ func (server *Server) urlsPatchRequest(c echo.Context) error {
 }
 
 func (server *Server) urlsGetHandler(c echo.Context) error {
-	operationNumber := server.Kernel.GetNextOperationNumber()
-
 	id := c.Param("id")
-	url_, err := server.Kernel.Get(operationNumber, id)
+	url_, err := server.Kernel.Database.Get(id)
 	if err != nil {
 		return err
 	}
@@ -110,15 +73,8 @@ func (server *Server) urlsGetHandler(c echo.Context) error {
 }
 
 func (server *Server) urlsDeleteRequest(c echo.Context) error {
-	operationNumber := server.Kernel.GetNextOperationNumber()
-
 	id := c.Param("id")
-	url_, err := server.Kernel.Get(operationNumber, id)
-	if err != nil {
-		return err
-	}
-
-	err = server.Kernel.Delete(operationNumber, url_)
+	err := server.Kernel.Database.Delete(id)
 	if err != nil {
 		return err
 	}
@@ -134,28 +90,9 @@ func (server *Server) registerUrlsHandlers(g *echo.Group) {
 	g.DELETE("/urls/:id/", server.urlsDeleteRequest)
 }
 
-//func CheckTokenMiddleware(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		correctToken := viper.GetString("token")
-//		if correctToken != "" {
-//			token := r.Header.Get("Authorization")
-//			if token == "" {
-//				utils.ErrorToResponse(&utils.SimpleResponse{Status: http.StatusUnauthorized, Msg: "Need auth credentials"}, w)
-//				return
-//			} else if "Bearer "+correctToken != token {
-//				utils.ErrorToResponse(&utils.SimpleResponse{Status: http.StatusUnauthorized, Msg: "Bad auth credentials"}, w)
-//				return
-//			}
-//		}
-//		next(w, r)
-//	}
-//}
-
 func (server *Server) redirect(c echo.Context) error {
-	operationNumber := server.Kernel.GetNextOperationNumber()
-
 	id := c.Param("id")
-	urlVal, _ := server.Kernel.Get(operationNumber, id)
+	urlVal, _ := server.Kernel.Database.Get(id)
 	if urlVal.Url == "" {
 		return c.HTML(http.StatusNotFound, "<h1>Not found.</h1>")
 	}
@@ -164,25 +101,6 @@ func (server *Server) redirect(c echo.Context) error {
 
 func (server *Server) mainPage(c echo.Context) error {
 	return c.HTML(http.StatusNotFound, "<h1>Main page</h1>")
-}
-
-//func faviconHandler(w http.ResponseWriter, _ *http.Request) {
-//	w.WriteHeader(http.StatusNotFound)
-//}
-
-func errorMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		err := next(c)
-		if err == nil {
-			return nil
-		}
-		switch err {
-		case kernelErrors.NotFoundError:
-			return c.NoContent(http.StatusNotFound)
-		default:
-			return err
-		}
-	}
 }
 
 type ServerLog struct {
@@ -230,7 +148,7 @@ func (server *Server) mainLoggingMiddleware(next echo.HandlerFunc) echo.HandlerF
 		} else {
 			le.Type = "error"
 		}
-		server.Kernel.SystemLog(le)
+		_ = server.Kernel.Logger.Send(le)
 		return nil
 	}
 }
@@ -260,15 +178,15 @@ func (server *Server) Init(config map[string]interface{}) error {
 	return nil
 }
 
-func (server *Server) Run() error {
+func (server *Server) Run(wg *sync.WaitGroup) error {
 	go func() {
-		defer server.Kernel.OperationDone()
-		server.Kernel.SystemLog(&kernelErrors.GenericLog{Name: "Server.Started", IsError: false})
-		defer server.Kernel.SystemLog(&kernelErrors.GenericLog{Name: "Server.Stopped", IsError: false})
+		defer wg.Done()
+		server.Kernel.SetModuleRunState(server)
+		defer server.Kernel.SetModuleStopState(server)
 		err := server.echo.Start(server.ip + ":" + server.port)
 		if err != nil {
 			if !(err == http.ErrServerClosed && server.nativeClosed) {
-				server.Kernel.SystemLog(err)
+				_ = server.Kernel.Logger.SendError(err)
 			}
 		}
 	}()
@@ -277,8 +195,10 @@ func (server *Server) Run() error {
 
 func (server *Server) Stop() error {
 	server.nativeClosed = true
-	ctx := context.Background()
-	return server.echo.Shutdown(ctx)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	err := server.echo.Shutdown(ctx)
+	return err
 }
 
 func (server *Server) GetName() string {
@@ -286,5 +206,5 @@ func (server *Server) GetName() string {
 }
 
 func (server *Server) GetType() string {
-	return "Server"
+	return "Input.Server"
 }

@@ -2,7 +2,6 @@ package kernel
 
 import (
 	"goshort/types"
-	errors2 "goshort/types/errors"
 	"time"
 )
 
@@ -80,40 +79,43 @@ func getModuleInfo(module types.ModuleInterface) ReconnectionLogModuleInfo {
 	}
 }
 
-// TODO: place to the code
-var ReconnectionAlert = &errors2.GenericLog{Name: "Common.Reconnection.ReconnectionAlert", IsError: false}
+type ReconnectionKernel struct {
+	Kernel *Kernel
+}
 
-func (kernel *Kernel) reconnectionCore(module types.ModuleInterface, loggerFunction func(log types.Log)) {
-	defer kernel.wg.Done()
+func (reconnectionKernel *ReconnectionKernel) work(module types.ModuleInterface) {
+	defer reconnectionKernel.Kernel.wg.Done()
 
-	operationId := kernel.GetNextOperationNumber()
+	operationId := reconnectionKernel.Kernel.GetNextOperationNumber()
 
 	maxAttempts := module.GetMaxRetryAttempts()
 	retryInterval := module.GetRetryAttemptInterval()
 
-	loggerFunction(&ReconnectionTaskStateChange{
+	_ = reconnectionKernel.Kernel.Logger.Send(&ReconnectionTaskStateChange{
 		TaskId:     operationId,
 		ModuleName: module.GetName(),
 		EventName:  "start",
 	})
-	defer loggerFunction(&ReconnectionTaskStateChange{
+	defer reconnectionKernel.Kernel.Logger.Send(&ReconnectionTaskStateChange{
 		TaskId:     operationId,
 		ModuleName: module.GetName(),
 		EventName:  "end",
 	})
 
 	for currentAttempt := 0; currentAttempt < maxAttempts; currentAttempt += 1 {
-		if kernel.Stopped {
+		if reconnectionKernel.Kernel.Stopped {
 			// TODO: logging here
 			return
 		}
 		err := module.TryReconnect()
 		if err == nil {
 			module.SetAvailable()
-			loggerFunction(&SuccessReconnection{getModuleInfo(module)})
+			_ = reconnectionKernel.Kernel.Logger.Send(&SuccessReconnection{
+				getModuleInfo(module),
+			})
 			return
 		} else {
-			loggerFunction(&BadReconnectionAttempt{
+			_ = reconnectionKernel.Kernel.Logger.Send(&BadReconnectionAttempt{
 				ReconnectionLogModuleInfo: getModuleInfo(module),
 				Error:                     err,
 				Attempt:                   currentAttempt + 1,
@@ -124,15 +126,15 @@ func (kernel *Kernel) reconnectionCore(module types.ModuleInterface, loggerFunct
 	}
 
 	module.SetDeath()
-	loggerFunction(&ReconnectionAttemptsLimit{
+	_ = reconnectionKernel.Kernel.Logger.Send(&ReconnectionAttemptsLimit{
 		ReconnectionLogModuleInfo: getModuleInfo(module),
 		Limit:                     maxAttempts,
 	})
 }
 
-func (kernel *Kernel) StartReconnection(module types.ModuleInterface, loggerFunction func(log types.Log)) {
+func (reconnectionKernel *ReconnectionKernel) Start(module types.ModuleInterface) {
 	if module.SetUnavailableAndTryGetReconnectionControl() {
-		kernel.wg.Add(1)
-		go kernel.reconnectionCore(module, loggerFunction)
+		reconnectionKernel.Kernel.wg.Add(1)
+		go reconnectionKernel.work(module)
 	}
 }

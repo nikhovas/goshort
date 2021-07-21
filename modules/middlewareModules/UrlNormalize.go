@@ -5,12 +5,8 @@ import (
 	"github.com/PuerkitoBio/purell"
 	"goshort/kernel"
 	"goshort/types"
+	"sync"
 )
-
-type UrlNormalizer struct {
-	breakOnError bool
-	Kernel       *kernel.Kernel
-}
 
 type CantNormalizeError struct {
 	Url     string
@@ -30,12 +26,32 @@ func (e *CantNormalizeError) Error() string {
 	return fmt.Sprintf("Error Middleware.UrlNormalize.CantNormalize url=%s details=%s", e.Url, e.Details.Error())
 }
 
+type UrlNormalizer struct {
+	types.ModuleBase
+	breakOnError bool
+	Kernel       *kernel.Kernel
+	Name         string
+}
+
+func CreateUrlNormalizer(kernel *kernel.Kernel) types.MiddlewareInterface {
+	return &UrlNormalizer{Kernel: kernel}
+}
+
 func (middleware *UrlNormalizer) Init(config map[string]interface{}) error {
 	middleware.breakOnError = config["break_on_error"].(bool)
 	return nil
 }
 
-func (middleware *UrlNormalizer) Exec(url *types.Url) types.AdvancedError {
+func (middleware *UrlNormalizer) Run(wg *sync.WaitGroup) error {
+	wg.Done()
+	return nil
+}
+
+func (middleware *UrlNormalizer) Stop() error {
+	return nil
+}
+
+func (middleware *UrlNormalizer) Exec(url *types.Url) error {
 	if url.Code == 0 {
 		url.Code = 301
 	}
@@ -54,6 +70,14 @@ func (middleware *UrlNormalizer) Exec(url *types.Url) types.AdvancedError {
 	return nil
 }
 
-func (middleware *UrlNormalizer) Name() string {
+func (middleware *UrlNormalizer) GetName() string {
+	return middleware.Name
+}
+
+func (middleware *UrlNormalizer) GetType() string {
 	return "UrlNormalizer"
+}
+
+func (middleware *UrlNormalizer) BreakOnError() bool {
+	return middleware.breakOnError
 }

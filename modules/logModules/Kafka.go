@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/segmentio/kafka-go"
-	"goshort/kernel"
 	"goshort/kernel/utils"
+	"goshort/kernel/utils/other"
 	"goshort/types"
 	errors2 "goshort/types/errors"
 	"io"
 	"net"
 	"strconv"
+	"sync"
 )
 
 type Kafka struct {
@@ -21,7 +22,7 @@ type Kafka struct {
 	port      int
 	topic     string
 	partition int
-	Kernel    *kernel.Kernel
+	Kernel    types.KernelInterface
 	Name      string
 }
 
@@ -35,7 +36,7 @@ func (k *Kafka) Init(config map[string]interface{}) error {
 	return nil
 }
 
-func CreateKafka(kernel *kernel.Kernel) types.LoggerInterface {
+func CreateKafka(kernel types.KernelInterface) types.LoggerInterface {
 	return &Kafka{Kernel: kernel}
 }
 
@@ -57,19 +58,32 @@ func (k *Kafka) Connect() error {
 	return err
 }
 
-func (k *Kafka) Run() error {
-	defer k.Kernel.OperationDone()
-	return k.Connect()
+func (k *Kafka) Run(wg *sync.WaitGroup) error {
+	wg.Done()
+	err := k.Connect()
+	if err != nil {
+		return err
+	}
+	k.LoggerBase.ModuleBase.IsAvailableVal = 1
+	k.Kernel.SetModuleRunState(k)
+	return nil
 }
 
 func (k *Kafka) Stop() error {
+	k.SetUnavailableAndTryGetReconnectionControl()
+	k.SetDeath()
 	if k.conn != nil {
-		return k.conn.Close()
+		err := k.conn.Close()
+		k.Kernel.SetModuleStopState(k)
+		return err
 	}
 	return nil
 }
 
 func (k *Kafka) Send(element types.Log) error {
+	if !k.IsAvailable() {
+		return nil
+	}
 	data, _ := json.Marshal(element.ToMap())
 	_, err := k.conn.Write(data)
 	if err != nil {
@@ -87,12 +101,45 @@ func (k *Kafka) Send(element types.Log) error {
 	return err
 }
 
+func (k *Kafka) SendError(err error) error {
+	return k.Send(other.InterfaceToLogWrapper(err))
+}
+
+func (k *Kafka) SendBatch(batch *types.LoggingQueueNode) error {
+	if !k.IsAvailable() {
+		return nil
+	}
+
+	var messages []kafka.Message
+
+	for batch != nil {
+		data, _ := json.Marshal(batch.Log.ToMap())
+		messages = append(messages, kafka.Message{Value: data})
+		batch = batch.Next
+	}
+
+	_, err := k.conn.WriteMessages(messages...)
+	if err != nil {
+		_, ok := err.(*net.OpError)
+		if errors.Is(err, io.EOF) || ok {
+			return &errors2.BadConnectionError{
+				Host:      k.ip,
+				Port:      k.port,
+				Protocol:  "TCP",
+				Retryable: true,
+			}
+		}
+	}
+
+	return nil
+}
+
 func (k *Kafka) GetName() string {
 	return k.Name
 }
 
 func (k *Kafka) GetType() string {
-	return "KafkaLogger"
+	return "Logger.Kafka"
 }
 
 func (k *Kafka) TryReconnect() error {
