@@ -4,8 +4,13 @@ import (
 	"encoding/json"
 	"goshort/kernel/utils/other"
 	"goshort/types"
+	"log"
 	"sync"
 )
+
+//func toConsoleLogString(config map[string]interface{}) string {
+//
+//}
 
 type Console struct {
 	types.LoggerBase
@@ -35,7 +40,7 @@ func (controller *Console) Stop() error {
 
 func (controller *Console) Send(le types.Log) error {
 	b, _ := json.Marshal(le.ToMap())
-	println(string(b))
+	log.Println(string(b))
 	return nil
 }
 
