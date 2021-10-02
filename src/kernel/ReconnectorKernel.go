@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"goshort/types"
+	"goshort/src/types"
 	"time"
 )
 
@@ -21,6 +21,10 @@ func (task ReconnectionTaskStateChange) ToMap() map[string]interface{} {
 	}
 }
 
+func (task ReconnectionTaskStateChange) IsError() bool {
+	return false
+}
+
 type ReconnectionLogModuleInfo struct {
 	ModuleName string
 	ModuleType string
@@ -37,6 +41,10 @@ func (sr SuccessReconnection) ToMap() map[string]interface{} {
 		"moduleName": sr.ModuleName,
 		"moduleType": sr.ModuleType,
 	}
+}
+
+func (sr SuccessReconnection) IsError() bool {
+	return false
 }
 
 type BadReconnectionAttempt struct {
@@ -58,6 +66,10 @@ func (bra *BadReconnectionAttempt) ToMap() map[string]interface{} {
 	}
 }
 
+func (bra *BadReconnectionAttempt) IsError() bool {
+	return true
+}
+
 type ReconnectionAttemptsLimit struct {
 	ReconnectionLogModuleInfo
 	Limit int
@@ -70,6 +82,10 @@ func (ral *ReconnectionAttemptsLimit) ToMap() map[string]interface{} {
 		"moduleName": ral.ModuleName,
 		"moduleType": ral.ModuleType,
 	}
+}
+
+func (ral *ReconnectionAttemptsLimit) IsError() bool {
+	return false
 }
 
 func getModuleInfo(module types.ModuleInterface) ReconnectionLogModuleInfo {

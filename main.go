@@ -3,12 +3,25 @@ package main
 import (
 	"bytes"
 	"github.com/spf13/viper"
-	"goshort/kernel"
-	"goshort/modules/dbModules"
-	"goshort/modules/inputModules"
-	"goshort/modules/logModules"
-	"goshort/types"
+	"goshort/src/kernel"
+	"goshort/src/modules/dbModules"
+	"goshort/src/modules/inputModules"
+	"goshort/src/modules/logModules"
+	"goshort/src/types"
 )
+
+// @Title Goshort Swagger API
+// @Version 1.0
+// @Description Swagger API for Golang Project Goshort.
+// @TermsOfService http://swagger.io/terms/
+
+// @Contact.name Nikolay Vasilev
+// @Contact.email nikhovas@yandex.ru
+
+// @License.name MIT
+// @License.url https://github.com/nikhovas/goshort/blob/master/LICENSE
+
+// @BasePath /api/
 
 //var yamlExample = []byte(`
 //inputs:
@@ -65,6 +78,37 @@ import (
 // max_connections: 2000
 //`)
 
+//var yamlExample = []byte(`
+//inputs:
+// server:
+//   name: Server
+//   ip: ''
+//   port: 80
+//   mode: tcp
+//database:
+// redis:
+//  name: Redis
+//  ip: 127.0.0.1:6379
+//  port: 6379
+//  mode: tcp
+//  pool_size: 10
+//loggers:
+// kafka:
+//   name: Kafka
+//   ip: localhost
+//   port: 9092
+//   topic: test
+//   max_retry_attempts: 50
+// console:
+//   name: consoleLogger
+//   extra_logger: true
+//   common_logger: true
+//middlewares:
+// - url_normalizer
+//limits:
+// max_connections: 2000
+//`)
+
 var yamlExample = []byte(`
 inputs:
  server:
@@ -80,12 +124,6 @@ database:
   mode: tcp
   pool_size: 10
 loggers:
- kafka:
-   name: Kafka
-   ip: localhost
-   port: 9092
-   topic: test
-   max_retry_attempts: 50
  console:
    name: consoleLogger
    extra_logger: true

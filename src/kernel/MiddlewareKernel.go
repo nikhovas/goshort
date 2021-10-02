@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"goshort/types"
+	"goshort/src/types"
 	"sync"
 )
 

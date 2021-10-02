@@ -2,10 +2,10 @@ package dbModules
 
 import (
 	"errors"
-	"goshort/kernel"
-	"goshort/kernel/utils"
-	"goshort/types"
-	kernelErrors "goshort/types/errors"
+	"goshort/src/kernel"
+	"goshort/src/kernel/utils"
+	"goshort/src/types"
+	kernelErrors "goshort/src/types/errors"
 	"sync"
 	"sync/atomic"
 	"time"

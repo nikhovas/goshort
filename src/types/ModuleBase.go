@@ -1,8 +1,8 @@
 package types
 
 import (
-	"goshort/kernel/utils"
-	"goshort/types/errors"
+	"goshort/src/kernel/utils"
+	"goshort/src/types/errors"
 	"sync/atomic"
 )
 

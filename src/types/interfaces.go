@@ -57,6 +57,7 @@ type MiddlewareInterface interface {
 
 type Log interface {
 	ToMap() map[string]interface{}
+	IsError() bool
 }
 
 type LoggingQueueNode struct {

@@ -35,15 +35,19 @@ func (e *SimpleErrorWrapper) Error() string {
 	return "Error SimpleError " + e.Err.Error()
 }
 
+func (e *SimpleErrorWrapper) IsError() bool {
+	return true
+}
+
 type GenericLog struct {
-	Name    string
-	IsError bool
+	Name       string
+	LogIsError bool
 }
 
 func (e *GenericLog) ToMap() map[string]interface{} {
 	data := make(map[string]interface{})
 	data["name"] = e.Name
-	if e.IsError {
+	if e.LogIsError {
 		data["type"] = "error"
 	} else {
 		data["type"] = "log"
@@ -56,10 +60,15 @@ func (e *GenericLog) Error() string {
 	return "Error " + e.Name
 }
 
-var ValueAlreadyExistsError = &GenericLog{Name: "Common.ValueAlreadyExistsError", IsError: true}
-var GenericKeysAreNotSupported = &GenericLog{Name: "Common.GenericKeysAreNotSupported", IsError: true}
-var NotFoundError = &GenericLog{Name: "Common.NotFoundError", IsError: true}
-var NotImplementedError = &GenericLog{Name: "Common.NotImplementedError", IsError: true}
+func (e *GenericLog) IsError() bool {
+	return e.LogIsError
+}
+
+var ValueAlreadyExistsError = &GenericLog{Name: "Common.ValueAlreadyExistsError", LogIsError: true}
+var GenericKeysAreNotSupported = &GenericLog{Name: "Common.GenericKeysAreNotSupported", LogIsError: true}
+var NotFoundError = &GenericLog{Name: "Common.NotFoundError", LogIsError: true}
+var NotImplementedError = &GenericLog{Name: "Common.NotImplementedError", LogIsError: true}
+var AlreadyExistsError = &GenericLog{Name: "Common.AlreadyExistsError", LogIsError: true}
 
 type BadConnectionError struct {
 	Host      string

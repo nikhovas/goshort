@@ -1,8 +1,8 @@
 package other
 
 import (
-	"goshort/types"
-	errors2 "goshort/types/errors"
+	"goshort/src/types"
+	errors2 "goshort/src/types/errors"
 )
 
 func InterfaceToLogWrapper(element interface{}) types.Log {

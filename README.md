@@ -8,6 +8,7 @@
 Url shortener written in Go. Supports generic/specified key setting and REST API for urls.
 Needs Redis. Docker-friendly.
 
+* [Build requirements](#build-requirements)
 * [Docker](#docker)
 * [Build](#build)
 * [Configuration](#configuration)
@@ -19,6 +20,18 @@ Needs Redis. Docker-friendly.
     - [PATCH/PUT request](#patch-put-request)
     - [DELETE request](#delete-request)
   + [Authorization](#authorization)
+  
+
+## Build requirements
+
+Example for OS Ubuntu with redis data storage.
+
+|Name|Minimal version| Installation  |
+|---|---|---|
+|OS Ubuntu|18.04|https://ubuntu.com/tutorials/install-ubuntu-desktop|
+|Golang|1.16.5| https://golang.org/doc/install  |
+|go.mod libraries|-|`go get dep_name` for all dep_name in `go.mod` file (optionally, go will automatically install deps during go build)|
+|Redis|-|https://redis.io/topics/quickstart|
 
 ## Docker
 

@@ -15,3 +15,7 @@ func (log *ModuleStateChangeLog) ToMap() map[string]interface{} {
 		"state":      log.State,
 	}
 }
+
+func (log *ModuleStateChangeLog) IsError() bool {
+	return false
+}

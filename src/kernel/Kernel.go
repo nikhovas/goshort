@@ -1,8 +1,8 @@
 package kernel
 
 import (
-	"goshort/types"
-	errors2 "goshort/types/errors"
+	"goshort/src/types"
+	errors2 "goshort/src/types/errors"
 	"sync"
 	"sync/atomic"
 )

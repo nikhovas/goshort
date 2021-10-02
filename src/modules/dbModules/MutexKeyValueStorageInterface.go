@@ -2,9 +2,9 @@ package dbModules
 
 import (
 	"errors"
-	"goshort/kernel"
-	"goshort/types"
-	kernelErrors "goshort/types/errors"
+	"goshort/src/kernel"
+	"goshort/src/types"
+	kernelErrors "goshort/src/types/errors"
 )
 
 type MutexKeyValueStorageInterface interface {
