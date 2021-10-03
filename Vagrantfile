@@ -15,17 +15,25 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.synced_folder "tools/salt-commands", "/srv/salt"
+  config.vm.synced_folder "tools/pillar-commands", "/srv/pillar/"
+
+  config.vm.provision :shell, :inline => "sudo apt-get -y install git-core libgit2-dev"
+  config.vm.provision :shell, :inline => "sudo apt-get -y install python-setuptools"
+  config.vm.provision :shell, :inline => "sudo apt-get -y install python-pygit2 python3-pygit2"
+  config.vm.provision :shell, :inline => "sudo apt-get -y install python-git"
+  config.vm.provision :shell, :inline => "sudo apt-get -y install python-pip"
+  config.vm.provision :shell, :inline => "pip install pygit2"
 
   config.vm.provision :salt do |salt|
   	salt.masterless = true
-  	salt.run_highstate = false
-  	config.ssh.pty = false
+  	salt.run_highstate = true
+#   	config.ssh.pty = false
   	salt.minion_config = "tools/salt-configs/master"
-  	salt.install_type = "stable"
+#   	salt.install_type = "stable"
     salt.verbose = true
-    salt.colorize = true
+#     salt.colorize = true
     salt.bootstrap_options = "-F -P -c /tmp"
-    salt.run_highstate = true
+#     salt.run_highstate = true
   end
 
   # Create a forwarded port mapping which allows access to a specific port
