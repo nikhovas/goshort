@@ -1,2 +1,0 @@
-redis:
-    pkg.installed

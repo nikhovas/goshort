@@ -8,6 +8,9 @@ import (
 	"goshort/src/modules/inputModules"
 	"goshort/src/modules/logModules"
 	"goshort/src/types"
+	"io/ioutil"
+	"log"
+	"os"
 )
 
 // @Title Goshort Swagger API
@@ -22,92 +25,6 @@ import (
 // @License.url https://github.com/nikhovas/goshort/blob/master/LICENSE
 
 // @BasePath /api/
-
-//var yamlExample = []byte(`
-//inputs:
-// server:
-//   name: serverInput
-//   ip: ''
-//   port: 80
-//   mode: tcp
-//database:
-// redis:
-//   name: redisDatabase
-//   ip: 127.0.0.1:6379
-//   port: 6379
-//   mode: tcp
-//   pool_size: 10
-//loggers:
-// kafka:
-//   name: kafkaLogger
-//   ip: localhost
-//   port: 9999
-//   topic: goshort_logs
-// console:
-//middlewares:
-// - url_normalizer
-//limits:
-// max_connections: 2000
-//`)
-
-//var yamlExample = []byte(`
-//inputs:
-// server:
-//   name: Server
-//   ip: ''
-//   port: 80
-//   mode: tcp
-//database:
-// in_memory:
-//   name: inMemory
-//   max_elements: 100
-//loggers:
-// kafka:
-//   name: kafkaLogger
-//   ip: localhost
-//   port: 9092
-//   topic: test
-//   max_retry_attempts: 50
-// console:
-//   name: consoleLogger
-//   extra_logger: true
-//   common_logger: true
-//middlewares:
-// - url_normalizer
-//limits:
-// max_connections: 2000
-//`)
-
-//var yamlExample = []byte(`
-//inputs:
-// server:
-//   name: Server
-//   ip: ''
-//   port: 80
-//   mode: tcp
-//database:
-// redis:
-//  name: Redis
-//  ip: 127.0.0.1:6379
-//  port: 6379
-//  mode: tcp
-//  pool_size: 10
-//loggers:
-// kafka:
-//   name: Kafka
-//   ip: localhost
-//   port: 9092
-//   topic: test
-//   max_retry_attempts: 50
-// console:
-//   name: consoleLogger
-//   extra_logger: true
-//   common_logger: true
-//middlewares:
-// - url_normalizer
-//limits:
-// max_connections: 2000
-//`)
 
 var yamlExample = []byte(`
 inputs:
@@ -136,7 +53,23 @@ limits:
 
 func main() {
 	viper.SetConfigType("yaml")
-	_ = viper.ReadConfig(bytes.NewBuffer(yamlExample))
+	if len(os.Args) == 1 {
+		_ = viper.ReadConfig(bytes.NewBuffer(yamlExample))
+	} else {
+		fileName := os.Args[1]
+		file, err := os.Open(fileName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer func() {
+			if err = file.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		b, err := ioutil.ReadAll(file)
+		_ = viper.ReadConfig(bytes.NewBuffer(b))
+	}
 
 	kernelInstance := kernel.Kernel{
 		InputCreators: map[string]func(kernel *kernel.Kernel) types.InputInterface{

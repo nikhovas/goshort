@@ -21,6 +21,7 @@ type Server struct {
 	moduleName   string
 	Kernel       *kernel.Kernel
 	nativeClosed bool
+	token        string
 }
 
 func CreateServer(kernel *kernel.Kernel) types.InputInterface {
@@ -169,6 +170,16 @@ func (l *ServerLog) IsError() bool {
 	return l.ServerLogIsError
 }
 
+func (server *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if server.token != "" && c.Request().Header.Get("Authorization") != "Bearer "+server.token {
+			return c.NoContent(http.StatusUnauthorized)
+		}
+
+		return next(c)
+	}
+}
+
 func (server *Server) mainLoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var err types.Log
@@ -214,10 +225,12 @@ func (server *Server) Init(config map[string]interface{}) error {
 	server.moduleName = config["name"].(string)
 	server.ip = config["ip"].(string)
 	server.port = strconv.Itoa(config["port"].(int))
+	server.token, _ = config["token"].(string)
 	server.echo.HideBanner = true
 	server.echo.HidePort = true
 
 	api := server.echo.Group("api")
+	api.Use(server.authMiddleware)
 	api.POST("/urls/", server.urlsPostHandler)
 	api.GET("/urls/:id/", server.urlsGetHandler)
 	api.PATCH("/urls/:id/", server.urlsPatchRequest)

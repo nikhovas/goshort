@@ -112,11 +112,13 @@ func (reconnectionKernel *ReconnectionKernel) work(module types.ModuleInterface)
 		ModuleName: module.GetName(),
 		EventName:  "start",
 	})
-	defer reconnectionKernel.Kernel.Logger.Send(&ReconnectionTaskStateChange{
-		TaskId:     operationId,
-		ModuleName: module.GetName(),
-		EventName:  "end",
-	})
+	defer func() {
+		_ = reconnectionKernel.Kernel.Logger.Send(&ReconnectionTaskStateChange{
+			TaskId:     operationId,
+			ModuleName: module.GetName(),
+			EventName:  "end",
+		})
+	}()
 
 	for currentAttempt := 0; currentAttempt < maxAttempts; currentAttempt += 1 {
 		if reconnectionKernel.Kernel.Stopped {
