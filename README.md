@@ -22,7 +22,7 @@ Example for OS Ubuntu with redis/SQL data storage.
 |Name|Minimal version| Installation  |
 |---|---|---|
 |OS Ubuntu|18.04|https://ubuntu.com/tutorials/install-ubuntu-desktop|
-|Golang|1.16.5| https://golang.org/doc/install  |
+|Golang|1.14.2| https://golang.org/doc/install  |
 |go.mod libraries|-|`go get dep_name` for all dep_name in `go.mod` file (optionally, go will automatically install deps during go build)|
 |Redis|6.2|https://redis.io/topics/quickstart|
 |Postgres|12.0|`sudo apt -y install postgresql`
