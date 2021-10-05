@@ -2,14 +2,13 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/spf13/viper"
 	"goshort/src/kernel"
 	"goshort/src/modules/dbModules"
 	"goshort/src/modules/inputModules"
 	"goshort/src/modules/logModules"
 	"goshort/src/types"
-	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -52,23 +51,19 @@ limits:
 `)
 
 func main() {
+	viper.SetConfigName("goshort-config")
 	viper.SetConfigType("yaml")
-	if len(os.Args) == 1 {
-		_ = viper.ReadConfig(bytes.NewBuffer(yamlExample))
-	} else {
-		fileName := os.Args[1]
-		file, err := os.Open(fileName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer func() {
-			if err = file.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
 
-		b, err := ioutil.ReadAll(file)
-		_ = viper.ReadConfig(bytes.NewBuffer(b))
+	if len(os.Args) > 1 {
+		viper.AddConfigPath(os.Args[1])
+	}
+	viper.AddConfigPath("/etc/goshort/")
+	viper.AddConfigPath("/usr/local/etc/")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		_, _ = fmt.Printf("No config found. Using default.")
+		_ = viper.ReadConfig(bytes.NewBuffer(yamlExample))
 	}
 
 	kernelInstance := kernel.Kernel{
@@ -95,7 +90,7 @@ func main() {
 
 	_ = kernelInstance.Init(config)
 
-	err := kernelInstance.Run(nil)
+	err = kernelInstance.Run(nil)
 	if err != nil {
 		print(err.Error())
 	}
