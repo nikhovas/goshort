@@ -2,68 +2,28 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/spf13/viper"
-	"goshort/kernel"
-	"goshort/modules/dbModules"
-	"goshort/modules/inputModules"
-	"goshort/modules/logModules"
-	"goshort/types"
+	"goshort/src/kernel"
+	"goshort/src/modules/dbModules"
+	"goshort/src/modules/inputModules"
+	"goshort/src/modules/logModules"
+	"goshort/src/types"
+	"os"
 )
 
-//var yamlExample = []byte(`
-//inputs:
-// server:
-//   name: serverInput
-//   ip: ''
-//   port: 80
-//   mode: tcp
-//database:
-// redis:
-//   name: redisDatabase
-//   ip: 127.0.0.1:6379
-//   port: 6379
-//   mode: tcp
-//   pool_size: 10
-//loggers:
-// kafka:
-//   name: kafkaLogger
-//   ip: localhost
-//   port: 9999
-//   topic: goshort_logs
-// console:
-//middlewares:
-// - url_normalizer
-//limits:
-// max_connections: 2000
-//`)
+// @Title Goshort Swagger API
+// @Version 1.0
+// @Description Swagger API for Golang Project Goshort.
+// @TermsOfService http://swagger.io/terms/
 
-//var yamlExample = []byte(`
-//inputs:
-// server:
-//   name: Server
-//   ip: ''
-//   port: 80
-//   mode: tcp
-//database:
-// in_memory:
-//   name: inMemory
-//   max_elements: 100
-//loggers:
-// kafka:
-//   name: kafkaLogger
-//   ip: localhost
-//   port: 9092
-//   topic: test
-//   max_retry_attempts: 50
-// console:
-//   name: consoleLogger
-//   extra_logger: true
-//   common_logger: true
-//middlewares:
-// - url_normalizer
-//limits:
-// max_connections: 2000
-//`)
+// @Contact.name Nikolay Vasilev
+// @Contact.email nikhovas@yandex.ru
+
+// @License.name MIT
+// @License.url https://github.com/nikhovas/goshort/blob/master/LICENSE
+
+// @BasePath /api/
 
 var yamlExample = []byte(`
 inputs:
@@ -80,12 +40,6 @@ database:
   mode: tcp
   pool_size: 10
 loggers:
- kafka:
-   name: Kafka
-   ip: localhost
-   port: 9092
-   topic: test
-   max_retry_attempts: 50
  console:
    name: consoleLogger
    extra_logger: true
@@ -97,8 +51,20 @@ limits:
 `)
 
 func main() {
+	viper.SetConfigName("goshort-config")
 	viper.SetConfigType("yaml")
-	_ = viper.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	if len(os.Args) > 1 {
+		viper.AddConfigPath(os.Args[1])
+	}
+	viper.AddConfigPath("/etc/goshort/")
+	viper.AddConfigPath("/usr/local/etc/")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		_, _ = fmt.Printf("No config found. Using default.")
+		_ = viper.ReadConfig(bytes.NewBuffer(yamlExample))
+	}
 
 	kernelInstance := kernel.Kernel{
 		InputCreators: map[string]func(kernel *kernel.Kernel) types.InputInterface{
@@ -124,7 +90,7 @@ func main() {
 
 	_ = kernelInstance.Init(config)
 
-	err := kernelInstance.Run(nil)
+	err = kernelInstance.Run(nil)
 	if err != nil {
 		print(err.Error())
 	}

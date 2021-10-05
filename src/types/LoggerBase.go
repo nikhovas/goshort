@@ -1,6 +1,6 @@
 package types
 
-import "goshort/kernel/utils"
+import "goshort/src/kernel/utils"
 
 type LoggerBase struct {
 	ModuleBase

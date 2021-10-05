@@ -1,8 +1,8 @@
 package inputModules
 
 import (
-	"goshort/kernel"
-	"goshort/types"
+	"goshort/src/kernel"
+	"goshort/src/types"
 	"sync"
 )
 

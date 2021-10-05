@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"goshort/types"
+	"goshort/src/types"
 	"time"
 )
 
@@ -21,6 +21,10 @@ func (task ReconnectionTaskStateChange) ToMap() map[string]interface{} {
 	}
 }
 
+func (task ReconnectionTaskStateChange) IsError() bool {
+	return false
+}
+
 type ReconnectionLogModuleInfo struct {
 	ModuleName string
 	ModuleType string
@@ -37,6 +41,10 @@ func (sr SuccessReconnection) ToMap() map[string]interface{} {
 		"moduleName": sr.ModuleName,
 		"moduleType": sr.ModuleType,
 	}
+}
+
+func (sr SuccessReconnection) IsError() bool {
+	return false
 }
 
 type BadReconnectionAttempt struct {
@@ -58,6 +66,10 @@ func (bra *BadReconnectionAttempt) ToMap() map[string]interface{} {
 	}
 }
 
+func (bra *BadReconnectionAttempt) IsError() bool {
+	return true
+}
+
 type ReconnectionAttemptsLimit struct {
 	ReconnectionLogModuleInfo
 	Limit int
@@ -70,6 +82,10 @@ func (ral *ReconnectionAttemptsLimit) ToMap() map[string]interface{} {
 		"moduleName": ral.ModuleName,
 		"moduleType": ral.ModuleType,
 	}
+}
+
+func (ral *ReconnectionAttemptsLimit) IsError() bool {
+	return false
 }
 
 func getModuleInfo(module types.ModuleInterface) ReconnectionLogModuleInfo {
@@ -96,11 +112,13 @@ func (reconnectionKernel *ReconnectionKernel) work(module types.ModuleInterface)
 		ModuleName: module.GetName(),
 		EventName:  "start",
 	})
-	defer reconnectionKernel.Kernel.Logger.Send(&ReconnectionTaskStateChange{
-		TaskId:     operationId,
-		ModuleName: module.GetName(),
-		EventName:  "end",
-	})
+	defer func() {
+		_ = reconnectionKernel.Kernel.Logger.Send(&ReconnectionTaskStateChange{
+			TaskId:     operationId,
+			ModuleName: module.GetName(),
+			EventName:  "end",
+		})
+	}()
 
 	for currentAttempt := 0; currentAttempt < maxAttempts; currentAttempt += 1 {
 		if reconnectionKernel.Kernel.Stopped {

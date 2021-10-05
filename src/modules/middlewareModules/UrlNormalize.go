@@ -3,8 +3,8 @@ package middlewareModules
 import (
 	"fmt"
 	"github.com/PuerkitoBio/purell"
-	"goshort/kernel"
-	"goshort/types"
+	"goshort/src/kernel"
+	"goshort/src/types"
 	"sync"
 )
 

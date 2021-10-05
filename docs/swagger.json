@@ -1,0 +1,187 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Swagger API for Golang Project Goshort.",
+        "title": "Goshort Swagger API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Nikolay Vasilev",
+            "email": "nikhovas@yandex.ru"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://github.com/nikhovas/goshort/blob/master/LICENSE"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api/",
+    "paths": {
+        "/urls/": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Url"
+                ],
+                "summary": "Create url by sent data",
+                "operationId": "postUrl",
+                "parameters": [
+                    {
+                        "description": "This is body string param",
+                        "name": "url",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Url"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created",
+                        "schema": {
+                            "$ref": "#/definitions/types.Url"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad input data"
+                    }
+                }
+            }
+        },
+        "/urls/{key}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Url"
+                ],
+                "summary": "Get url by key",
+                "operationId": "getUrl",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Url key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.Url"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad input data"
+                    },
+                    "404": {
+                        "description": "No such url"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Url"
+                ],
+                "summary": "Delete url by key",
+                "operationId": "deleteUrl",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Url key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successfully deleted"
+                    },
+                    "400": {
+                        "description": "Bad input data"
+                    },
+                    "404": {
+                        "description": "No such url"
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Url"
+                ],
+                "summary": "Edit url by sent data",
+                "operationId": "patchUrl",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Url key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "This is body string param",
+                        "name": "url",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Url"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.Url"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad input data"
+                    },
+                    "404": {
+                        "description": "No such url"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "types.Url": {
+            "type": "object",
+            "properties": {
+                "autogenerated": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "code": {
+                    "type": "integer",
+                    "example": 301
+                },
+                "key": {
+                    "type": "string",
+                    "example": "example"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "example.com"
+                }
+            }
+        }
+    }
+}

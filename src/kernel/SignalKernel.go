@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	errors2 "goshort/types/errors"
+	errors2 "goshort/src/types/errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,7 +16,7 @@ func (signalKernel *SignalKernel) Run() error {
 
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	_ = signalKernel.Kernel.Logger.Send(&errors2.GenericLog{Name: "Kernel.Signal.StartWaiting", IsError: false})
+	_ = signalKernel.Kernel.Logger.Send(&errors2.GenericLog{Name: "Kernel.Signal.StartWaiting", LogIsError: false})
 
 	select {
 	case systemSignal := <-signals:

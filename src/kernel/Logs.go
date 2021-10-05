@@ -11,3 +11,7 @@ func (log *SignalGotLog) ToMap() map[string]interface{} {
 		"signal": log.Signal,
 	}
 }
+
+func (log *SignalGotLog) IsError() bool {
+	return false
+}

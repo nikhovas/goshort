@@ -1,9 +1,9 @@
 package kernel
 
 import (
-	"goshort/kernel/utils/other"
-	"goshort/types"
-	errors2 "goshort/types/errors"
+	"goshort/src/kernel/utils/other"
+	"goshort/src/types"
+	errors2 "goshort/src/types/errors"
 	"sync"
 	"sync/atomic"
 	"time"
