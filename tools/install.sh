@@ -1,4 +1,4 @@
 #!/bin/bash
 
 GOBIN=/usr/local/bin/ go install
-cp other/goshort.service /etc/systemd/system
+cp tools/supervisor.conf /etc/supervisor/conf.d/goshort.conf
