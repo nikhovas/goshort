@@ -71,6 +71,8 @@ limits:
 
 See `docs/swagger.yaml` for swagger Rest API.
 
+To regenerate `swag init` in the root of the project.
+
 ### Authorization
 
 For simplicity the project uses a simple Bearer token auth, which you can specify with
