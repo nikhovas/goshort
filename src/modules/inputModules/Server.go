@@ -129,6 +129,14 @@ func (server *Server) registerUrlsHandlers(g *echo.Group) {
 	g.DELETE("/urls/:id/", server.urlsDeleteRequest)
 }
 
+// @Summary Get redirection page
+// @ID redirect
+// @Produce html
+// @Param key path string true "Url key"
+// @Success 301 "If temporary redirect"
+// @Success 308 "If permanent redirect"
+// @Failure 404 "No such url"
+// @Router /{key} [get]
 func (server *Server) redirect(c echo.Context) error {
 	id := c.Param("id")
 	urlVal, _ := server.Kernel.Database.Get(id)
